@@ -25,12 +25,13 @@ describe("opencodeFingerprint — request side", () => {
     expect(map.get("bash")).toBe("Bash");
   });
 
-  it("removes quartet case duplicates without dropping unrelated case variants", () => {
-    const body = { tools: flat(["Bash", "bash", "Glob", "grep", "Read", "Foo", "foo"]) };
+  it("removes fingerprint case duplicates without dropping unrelated case variants", () => {
+    const body = { tools: flat(["Bash", "bash", "Read", "read", "Foo", "foo"]) };
     applyFingerprintTools(body, true);
 
     const names = body.tools.map((tool) => tool.name);
     expect(names.filter((name) => name === "bash")).toHaveLength(1);
+    expect(names.filter((name) => name === "read")).toHaveLength(1);
     expect(names).toContain("Foo");
     expect(names).toContain("foo");
   });
@@ -51,7 +52,7 @@ describe("opencodeFingerprint — request side", () => {
     expect(body.tools[1].function.name).toBe("bash");
   });
 
-  it("injects all four fingerprint tools when the body carries no tools", () => {
+  it("injects bash/read when the body carries no tools", () => {
     const body = { tools: [] };
     applyFingerprintTools(body, true);
 
@@ -73,15 +74,15 @@ describe("opencodeFingerprint — request side", () => {
     expect(body.tool_choice).toBeUndefined();
   });
 
-  it("appends only genuinely missing quartet members", () => {
+  it("appends only genuinely missing fingerprint members", () => {
     const body = { tools: flat(["Bash", "Read", "terminal"]) };
     applyFingerprintTools(body, true);
 
     const names = body.tools.map((tool) => tool.name);
-    expect(names).toContain("glob");
-    expect(names).toContain("grep");
+    expect(names).toContain("bash");
+    expect(names).toContain("read");
     expect(names).toContain("terminal");
-    expect(body.tools).toHaveLength(5);
+    expect(body.tools).toHaveLength(3);
   });
 
   it("retargets flat tool_choice that points at a renamed tool", () => {
@@ -179,10 +180,10 @@ describe("opencodeFingerprint — response side", () => {
 });
 
 describe("fingerprintToolKey", () => {
-  it("maps quartet case/whitespace variants and rejects other tools", () => {
+  it("maps fingerprint case/whitespace variants and rejects other tools", () => {
     expect(fingerprintToolKey("Bash")).toBe("bash");
     expect(fingerprintToolKey(" bash ")).toBe("bash");
-    expect(fingerprintToolKey("GLOB")).toBe("glob");
+    expect(fingerprintToolKey("GLOB")).toBe("");
     expect(fingerprintToolKey("Read")).toBe("read");
     expect(fingerprintToolKey("Edit")).toBe("");
     expect(fingerprintToolKey("terminal")).toBe("");

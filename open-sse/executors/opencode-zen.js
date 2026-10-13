@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { DefaultExecutor } from "./default.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
 import { isMuseSparkModel } from "../providers/models/helpers.js";
+import { OPENCODE_FINGERPRINT_TOOLS } from "../utils/opencodeFingerprint.js";
 import {
   normalizeResponsesInput,
   clampResponsesCallId,
@@ -18,9 +19,9 @@ const MAX_TOOL_NAME_LEN = 128;
 const OPENCODE_UA = "opencode/1.18.35";
 export const OPENCODE_SESSION_RE = /^ses_[0-9a-f]{12}[0-9A-Za-z]{14}$/;
 const BASE62_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-// Free-tier fingerprint (mirrors opencode executor, PR #4132): upstream 403s
-// requests without the file-search quartet and without stream:true.
-const OPENCODE_FINGERPRINT_TOOLS = ["bash", "glob", "grep", "read"];
+// Current free-tier checks require these two native OpenCode tools on
+// tool-less requests, plus stream:true. Share the canonical definitions with
+// the primary OpenCode executor so both routes stay protocol-identical.
 
 function hasValidOpencodeVersion(ua) {
   const m = String(ua || "").match(/opencode\/(\d+)\.(\d+)(?:\.(\d+))?/i);

@@ -1,5 +1,18 @@
-// Free OpenCode models that don't use the "-free" id suffix
-const KNOWN_FREE_OPENCODE_MODELS = ["big-pickle"];
+// Free OpenCode models that don't use the "-free" id suffix. Keep this in sync
+// with the live Zen catalog, whose free models are explicitly marked by name/id.
+const KNOWN_FREE_OPENCODE_MODELS = [
+  "big-pickle",
+  "cat-jam-free",
+  "jev-1.13-free",
+  "ling-3.1-flash-free",
+  "longcat-2.5-preview-free",
+  "mimo-v2.6-flash-free",
+  "muse-spark-1.2-contributor-free",
+  "muse-spark-1.3-contributor-free",
+  "nemotron-3.5-lightning-free",
+  "space-bunny-free",
+  "step-5-preview-free",
+];
 
 // Upstream returns "Model is unavailable" for this id (2026-09-02) — re-enable when fixed
 const DEAD_FREE_OPENCODE_MODELS = new Set(["deepseek-v4-flash-free"]);

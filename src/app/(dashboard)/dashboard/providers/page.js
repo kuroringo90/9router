@@ -309,7 +309,7 @@ export default function ProvidersPage() {
   const oauthEntries = sortByPriority(
     Object.entries(OAUTH_PROVIDERS).filter(
       ([key, info]) =>
-        !info.hidden &&
+        !info.hidden && !info.disabled &&
         matchSearch(info.name) &&
         matchStatus(getProviderStats(key, dualAuthTypes(info, key)), info.noAuth),
     ),
@@ -318,7 +318,7 @@ export default function ProvidersPage() {
   const freeEntries = Object.entries(FREE_PROVIDERS)
     .filter(
       ([key, info]) =>
-        !info.hidden &&
+        !info.hidden && !info.disabled &&
         matchSearch(info.name) &&
         matchStatus(getProviderStats(key, dualAuthTypes(info, key)), info.noAuth),
     )
@@ -329,7 +329,7 @@ export default function ProvidersPage() {
   const freeTierEntries = Object.entries(FREE_TIER_PROVIDERS)
     .filter(
       ([key, info]) =>
-        !info.hidden &&
+        !info.hidden && !info.disabled &&
         matchSearch(info.name) &&
         (info.serviceKinds ?? ["llm"]).includes("llm") &&
         matchStatus(getProviderStats(key, dualAuthTypes(info, key)), info.noAuth),
@@ -349,7 +349,7 @@ export default function ProvidersPage() {
   const apikeyEntries = Object.entries(APIKEY_PROVIDERS)
     .filter(
       ([key, info]) =>
-        !info.hidden &&
+        !info.hidden && !info.disabled &&
         (info.serviceKinds ?? ["llm"]).includes("llm") &&
         matchSearch(info.name) &&
         matchStatus(getProviderStats(key, "apikey"), info.noAuth),

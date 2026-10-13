@@ -1,22 +1,20 @@
 /**
  * Helpers for the OpenCode Zen free-tier client fingerprint.
  *
- * Live upstream probes show that free-tier requests must include the lowercase
- * file-search quartet (bash/glob/grep/read). Agent clients such as Claude Code
- * may declare the same tools with different casing, so those case variants must
- * be renamed instead of duplicated. The response side restores the caller's
- * original spelling so downstream clients still recognise their own tool calls.
+ * OpenCode's free-tier request fingerprint uses the lowercase bash/read tools.
+ * Agent clients may declare these with different casing, so case variants are
+ * canonicalized instead of duplicated. The response side restores caller names.
  */
 
-/** Canonical names required by the upstream free-tier gate. */
-export const OPENCODE_FINGERPRINT_TOOLS = ["bash", "glob", "grep", "read"];
+/** Canonical tool names required by the upstream free-tier gate. */
+export const OPENCODE_FINGERPRINT_TOOLS = ["bash", "read"];
 
 // Request body -> names renamed for that request. transformRequest() mutates the
 // same body object that chatCore passed into the executor, so a WeakMap keeps the
 // mapping request-local without putting transport metadata on the wire.
 const renamedToolNames = new WeakMap();
 
-/** Canonical lowercase name when `name` is a quartet member; "" otherwise. */
+/** Canonical lowercase name when `name` is a fingerprint member; "" otherwise. */
 export function fingerprintToolKey(name) {
   const lower = String(name ?? "").trim().toLowerCase();
   return OPENCODE_FINGERPRINT_TOOLS.includes(lower) ? lower : "";
@@ -34,7 +32,7 @@ function toolNameOf(tool) {
 }
 
 /**
- * Canonicalise only the fingerprint quartet and remove duplicate quartet
+ * Canonicalise only fingerprint tools and remove duplicate declarations
  * variants. Non-fingerprint tools are preserved verbatim, including tools whose
  * names differ only by case; they are outside OpenCode's fingerprint contract.
  *
