@@ -71,12 +71,17 @@ export async function handleSystemoneCore({
 
   // noAuth free lanes carry accessToken "public" from the credential stub.
   const token = credentials?.apiKey || credentials?.accessToken;
+  // Zen lanes expect the official client session header on every request.
+  const session = generateSessionId();
   const headers = {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(cfg.headers || {}),
     // Zen lanes expect the official client session header; other providers don't need it.
-    ...(OPENCODE_PROVIDERS.has(provider) ? { "x-opencode-session": generateSessionId() } : {}),
+    // x-opencode-session-id rides along with the same value (mirrors the v2 CLI).
+    ...(OPENCODE_PROVIDERS.has(provider)
+      ? { "x-opencode-session": session, "x-opencode-session-id": session }
+      : {}),
   };
   // Cloudflare validates the body model as a short selector (e.g. "clef-flash"), not the full id.
   const requestBody = { ...body, model: getModelUpstreamId(provider, model) || model };
