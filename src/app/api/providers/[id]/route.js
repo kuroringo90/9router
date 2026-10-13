@@ -6,6 +6,7 @@ import {
   deleteProviderConnection,
 } from "@/models";
 import { toProviderConnectionResponse, usesAwsCredentialForm } from "@/lib/providerConnectionResponse";
+import { AI_PROVIDERS } from "@/shared/constants/providers";
 
 function normalizeProxyConfig(body = {}) {
   const hasAnyProxyField =
@@ -99,6 +100,9 @@ export async function PUT(request, { params }) {
     if (!existing) {
       return NextResponse.json({ error: "Connection not found" }, { status: 404 });
     }
+    if (AI_PROVIDERS[existing.provider]?.disabled) {
+      return NextResponse.json({ error: "This provider is disabled because its free inference endpoint rejects third-party clients." }, { status: 410 });
+    }
 
     const proxyConfig = normalizeProxyConfig(body);
     if (proxyConfig.error) {
@@ -172,6 +176,14 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
+
+    const existing = await getProviderConnectionById(id);
+    if (!existing) {
+      return NextResponse.json({ error: "Connection not found" }, { status: 404 });
+    }
+    if (AI_PROVIDERS[existing.provider]?.disabled) {
+      return NextResponse.json({ error: "Remove this disabled provider connection in the dashboard." }, { status: 410 });
+    }
 
     const deleted = await deleteProviderConnection(id);
     if (!deleted) {

@@ -61,8 +61,9 @@ export async function GET() {
       }
     } catch { }
 
-    // Hide sensitive fields, enrich name for compatible providers
+    // Hide internal/disabled providers and enrich compatible display names.
     const safeConnections = connections.map(c => {
+      if (AI_PROVIDERS[c.provider]?.hidden || AI_PROVIDERS[c.provider]?.disabled) return null;
       const isCompatible = isOpenAICompatibleProvider(c.provider) || isAnthropicCompatibleProvider(c.provider);
       const name = isCompatible
         ? (c.name || nodeNameMap[c.provider] || c.providerSpecificData?.nodeName || c.provider)
@@ -71,7 +72,7 @@ export async function GET() {
         ...toProviderConnectionResponse(c),
         name,
       };
-    });
+    }).filter(Boolean);
 
     return NextResponse.json({ connections: safeConnections });
   } catch (error) {
@@ -96,6 +97,12 @@ export async function POST(request) {
       return NextResponse.json({ error: proxyPoolResult.error }, { status: 400 });
     }
     const proxyPoolId = proxyPoolResult.proxyPoolId;
+
+    if (AI_PROVIDERS[provider]?.disabled) {
+      return NextResponse.json({
+        error: `${AI_PROVIDERS[provider].name || provider} is disabled because its upstream free inference endpoint rejects third-party clients.`,
+      }, { status: 410 });
+    }
 
     // Validation
     const isWebCookieProvider = !!WEB_COOKIE_PROVIDERS[provider];

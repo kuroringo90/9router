@@ -62,7 +62,7 @@
        │   ↓ 配额耗尽
        ├─→ [第二层：低价] GLM ($0.6/1M)、MiniMax ($0.2/1M)
        │   ↓ 预算超限
-       └─→ [第三层：免费] Kiro、OpenCode Free、Vertex ($300 额度)
+       └─→ [第三层：免费] Kiro、Vertex ($300 额度)
 
 结果：编程永不停歇，最小成本 + 通过 RTK 节省 20-40% tokens
 ```
@@ -82,7 +82,7 @@ npm install -g 9router
 
 **2. 连接免费提供商（无需注册）：**
 
-控制面板 → 提供商 → 连接 **Kiro AI**（约 50 积分/月免费：Claude 4.5 + GLM-5 + MiniMax）或 **OpenCode Free**（无需认证）→ 完成！
+控制面板 → 提供商 → 连接 **Kiro AI**（约 50 积分/月免费：Claude 4.5 + GLM-5 + MiniMax）→ 完成！
 
 **3. 在 CLI 工具中使用：**
 
@@ -295,10 +295,9 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
   </table>
 </div>
 
-> **注意：** iFlow、Qwen Code 和 Gemini CLI 的免费等级已于 2026 年停止。请改用 Kiro / OpenCode Free / Vertex。
+> **注意：** iFlow、Qwen Code 和 Gemini CLI 的免费等级已于 2026 年停止。请改用 Kiro / Vertex 或其他可用提供商。
 >
 > **Kiro AI** 于 2025 年 9 月转为付费模式 — 免费等级现在上限为**每月 50 积分**（新账户前 30 天另加 500 试用积分）。付费档位：Pro $20/月（1,000 积分）、Pro+ $40/月（2,000）、Pro Max $100/月（5,000）、Power $200/月（10,000）。
-> **OpenCode Free** 的模型列表会随时间变化（部分模型仅限时免费）— 可能随时变更，恕不另行通知。
 > **Vertex AI**：新 GCP 账户的 $300 免费额度仍然有效，但自 2026 年 3 月起 **Gemini API 端点不再消耗这些额度** — 请改用 **Vertex AI Studio** 端点。
 
 ### 🔑 API Key 提供商（40+）
@@ -532,10 +531,9 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 | | MiniMax M2.7 | $0.2/1M | 5小时滚动 | 最便宜选项 |
 | | Kimi K2.5 | $9/月固定 | 10M tokens/月 | 可预测成本 |
  | **🆓 免费** | Kiro AI | $0 | 50 积分/月 | Claude 4.5 + GLM-5 + MiniMax 免费（之上为付费档位） |
- | | OpenCode Free | $0 |  varies* | 无需认证，自动获取模型（列表会变化） |
  | | Vertex AI | $300 额度 | 新 GCP 账户 | Gemini 3 Pro + DeepSeek + GLM-5（使用 Vertex AI Studio 端点消耗免费额度） |
 
-**💡 专业提示：** RTK + Kiro AI + OpenCode Free 组合 = **$0 成本 + 节省 20-40% tokens**！
+**💡 专业提示：** RTK + Kiro AI 组合可在额度内免费使用，并节省 20-40% tokens！
 
 ---
 
@@ -546,7 +544,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 ✅ **9Router 软件 = 永久免费**（开源，绝不收费）  
 ✅ **控制面板"成本" = 仅用于显示/追踪**（不是实际账单）  
 ✅ **你直接向提供商付款**（订阅或 API 费用）  
-✅ **免费提供商保持免费**（Kiro 约 50 积分/月、OpenCode Free、Vertex $300 额度 = 在免费额度内 $0）— 注意 iFlow/Qwen/Gemini CLI 免费等级已于 2026 年停止
+✅ **免费提供商保持免费**（Kiro 约 50 积分/月、Vertex $300 额度 = 在免费额度内 $0）— OpenCode Free 免费推理仅官方客户端可用
 ❌ **9Router 永不发送发票** 或扣款
 
 **成本显示如何工作：**
@@ -569,7 +567,7 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 **付款规则：**
 - **订阅提供商**（Claude Code、Codex）：通过他们的网站直接付款
 - **低价提供商**（GLM、MiniMax）：直接付款，9Router 只做路由
-- **免费提供商**（Kiro、OpenCode Free、Vertex）：真正的免费，在免费额度内无隐藏费用
+- **免费提供商**（Kiro、Vertex）：在各自免费额度内使用
 - **9Router**：从不收取任何费用，永远不会
 
 ---
@@ -674,14 +672,14 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 <details>
 <summary><b>🆓 免费提供商真的是无限量的吗？</b></summary>
 
-**基本上是！** 当前的免费提供商（Kiro、OpenCode Free、Vertex）是真正的免费，但免费等级有上限：
+**基本上是！** 当前可通过 9Router 使用的免费提供商（Kiro、Vertex）在各自免费额度内免费，但免费等级有上限：
 
 这些是各公司提供的免费服务：
 - **Kiro AI**：通过 AWS Builder ID / Google / GitHub OAuth 使用，免费等级约**每月 50 积分**（新账户前 30 天另加 500 试用积分）。之上提供付费档位。
-- **OpenCode Free**：无认证直连代理，模型从 `opencode.ai/zen/v1/models` 自动获取。免费模型列表会随时间变化（部分模型仅限时免费）— 可能随时变更。
+- **OpenCode Free**：模型目录仍可匿名读取，但上游只允许官方应用调用免费推理；通过 9Router 调用会返回 `403 FreeTierError`。
 - **Vertex AI**：新 Google Cloud 账户可获得 $300 免费额度（90 天）。自 2026 年 3 月起 Gemini API 端点不再消耗这些额度 — 请改用 **Vertex AI Studio** 端点。
 
-9Router 只是路由你的请求到它们 — 没有"陷阱"或未来的计费。它们是真正的免费服务，9Router 让它们易于使用并支持切换。
+9Router 将请求转发到提供商；免费额度、调用限制和使用条款由各提供商决定，请以其当前政策为准。
 
 **已停止的免费等级（不再推荐）：**
 - ❌ **iFlow**：曾是免费无限量，现在改为付费（2026）
@@ -698,10 +696,9 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 1. **从 100% 免费组合开始：**
    ```
    1. kr/glm-5 (通过 Kiro 免费使用 GLM-5，约 50 积分/月)
-   2. OpenCode Free 模型（无认证，自动获取）
    3. Vertex AI Gemini 3 Pro（使用 Vertex AI Studio 端点 + $300 额度）
    ```
-   **成本：$0/月**（在 Kiro 免费积分上限内；OpenCode/Vertex 受各自免费等级限制）
+   **成本：$0/月**（在 Kiro 免费积分上限内；Vertex 受其免费额度限制）
 
 2. **仅在需要时添加低价备份：**
    ```
@@ -862,15 +859,15 @@ PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run 
 
 **专业提示：** Claude 最佳免费选项。无需 API key，无需付款，完全无限量。
 
-### OpenCode Free（无需认证，自动获取模型）
+### OpenCode Free（免费推理仅官方客户端可用）
+
+> OpenCode 虽公开 `/zen/v1/models` 模型目录，但经 9Router 调用免费推理会返回 `403 FreeTierError`。请在官方 OpenCode 应用内使用免费层，或查看 [OpenCode Zen API Key](https://opencode.ai/docs/zen/) 付费接入方式。
 
 ```bash
-控制面板 → 连接 OpenCode Free
-→ 无需登录（直连代理）
-→ 模型从 opencode.ai/zen/v1/models 自动获取
+官方 OpenCode 应用 → 选择 OpenCode Free 模型
 ```
 
-**专业提示：** 最快的设置。连接后即可开始编码。
+9Router 当前不提供 OpenCode 免费推理路由。
 
 ### Vertex AI（新 GCP 账户 $300 免费额度）
 
@@ -1180,8 +1177,7 @@ docker stop 9router && docker rm 9router
 - `kr/qwen3-coder-next`
 - `kr/deepseek-3.2`
 
-**OpenCode Free（`oc/`）** - 免费无需认证：
-- 从 `opencode.ai/zen/v1/models` 自动获取
+**OpenCode Free（`oc/`）** - 免费推理仅官方客户端可用；通过 9Router 请求会返回 `403 FreeTierError`。
 
 **Vertex AI（`vertex/`）** - $300 免费额度：
 - `vertex/gemini-3.1-pro-preview`

@@ -3,7 +3,7 @@ import REGISTRY from "open-sse/providers/registry/index.js";
 import { RISK_NOTICE } from "@/shared/constants/providersDisplay.js";
 
 const MEDIA_ENTRY_KEYS = [
-  "serviceKinds", "ttsConfig", "sttConfig", "embeddingConfig",
+  "serviceKinds", "ttsConfig", "sttConfig", "embeddingConfig", "hidden", "disabled",
   "imageConfig", "imageToTextConfig", "videoConfig", "musicConfig",
   "searchViaChat", "searchConfig", "fetchConfig", "credentialFallback", "systemoneConfig",
   "modelsFetcher", "mediaPriority", "hiddenKinds",
@@ -23,6 +23,7 @@ function buildProviderEntry(r) {
     id: r.id,
     alias: r.uiAlias || r.alias,
     ...(r.hidden ? { hidden: true } : {}),
+    ...(r.disabled ? { disabled: true } : {}),
     ...mediaFields,
     ...(r.priority !== undefined ? { priority: r.priority } : {}),
     ...(r.hasFree ? { hasFree: true } : {}),
@@ -151,7 +152,7 @@ export function getProvidersByKind(kind) {
     .filter((p) => {
       const kinds = p.serviceKinds ?? ["llm"];
       if (!kinds.includes(kind)) return false;
-      if (p.hidden) return false;
+      if (p.hidden || p.disabled) return false;
       if (p.hiddenKinds?.includes(kind)) return false;
       return true;
     })

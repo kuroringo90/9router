@@ -224,6 +224,12 @@ describe("OpenCode Free Muse Spark thinking", () => {
         description: "Run shell command",
         parameters: { type: "object", properties: {} },
       },
+      ...["bash", "read"].map((name) => ({
+        type: "function",
+        name,
+        description: "This tool is currently unavailable and must not be used.",
+        parameters: { type: "object", properties: {} },
+      })),
     ]);
     expect(out.tools.map((t) => t.name)).toEqual(["shell_client", "read", "shell"]);
     expect(out.input.find((item) => item.type === "function_call").name).toBe("shell_client");

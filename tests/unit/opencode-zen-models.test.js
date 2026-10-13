@@ -8,8 +8,9 @@ const CHAT_ONLY = ["deepseek-v4-pro", "deepseek-v4-flash", "deepseek-v4-flash-vi
   "glm-5.3-flash", "glm-5.3", "glm-5.2", "glm-5.1", "glm-5",
   "minimax-m3", "minimax-m2.7", "minimax-m2.5",
   "kimi-k3", "kimi-k2.7-code", "kimi-k2.6", "kimi-k2.5",
-  "big-pickle", "deepseek-v4-flash-free",
-  "mimo-v2.6-flash-free", "mimo-v2.5-free", "ling-3.0-flash-fin-free", "nemotron-3-ultra-free", "nemotron-3.5-lightning-free"];
+  "big-pickle", "cat-jam-free", "deepseek-v4-flash-free", "ling-3.1-flash-free", "longcat-2.5-preview-free",
+  "mimo-v2.6-flash-free", "mimo-v2.5-free", "ling-3.0-flash-fin-free", "nemotron-3-ultra-free", "nemotron-3.5-lightning-free",
+  "space-bunny-free", "step-5-preview-free"];
 // Models that also expose the Anthropic /messages endpoint
 const CLAUDE_CAPABLE = ["claude-fable-5", "claude-fable-5-1", "claude-opus-5",
   "claude-opus-4-8", "claude-opus-4-7", "claude-opus-4-6", "claude-opus-4-5",
@@ -46,6 +47,7 @@ describe("OpenCode Zen model catalog", () => {
     expect(ids).toContain("deepseek-v4-pro");
     expect(ids.length).toBeGreaterThan(60);
   });
+
 });
 
 describe("OpenCode Zen per-model supportedFormats", () => {
@@ -65,6 +67,23 @@ describe("OpenCode Zen per-model supportedFormats", () => {
     for (const m of CHAT_ONLY) {
       expect(getModelSupportedFormats("ocz", m)).toEqual(["openai"]);
     }
+  });
+});
+
+describe("OpenCode Zen free-tier request shape", () => {
+  it("forces SSE and injects the native fingerprint while preserving client tools", async () => {
+    const { OpenCodeZenExecutor } = await import("../../open-sse/executors/opencode-zen.js");
+    const executor = new OpenCodeZenExecutor();
+    const chat = executor.transformRequest("cat-jam-free", { messages: [{ role: "user", content: "hi" }], stream: false }, false, {});
+    expect(chat.stream).toBe(true);
+    expect(chat.tools.map((tool) => tool.function.name)).toEqual(["bash", "read"]);
+
+    const responses = executor.transformRequest("muse-spark-1.3-contributor-free", {
+      input: "hi", tools: [{ type: "function", name: "caller_tool", parameters: { type: "object", properties: {} } }],
+      stream: false,
+    }, false, {});
+    expect(responses.stream).toBe(true);
+    expect(responses.tools.map((tool) => tool.name)).toEqual(["caller_tool", "bash", "read"]);
   });
 });
 

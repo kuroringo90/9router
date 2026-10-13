@@ -1,6 +1,8 @@
 export default {
   id: "opencode-zen",
   priority: 205,
+  hidden: true,
+  disabled: true,
   alias: "ocz",
   aliases: [
     "opencode-zen",
@@ -105,12 +107,17 @@ export default {
     { id: "big-pickle", name: "Big Pickle", supportedFormats: ["openai"] },
     { id: "union-alpha", name: "Union Alpha", supportedFormats: ["claude"] },
     // Free tier on the keyed lane (chat completions)
+    { id: "cat-jam-free", name: "Cat Jam Free", supportedFormats: ["openai"] },
     { id: "deepseek-v4-flash-free", name: "DeepSeek V4 Flash Free", supportedFormats: ["openai"] },
+    { id: "ling-3.1-flash-free", name: "Ling 3.1 Flash Free", supportedFormats: ["openai"] },
+    { id: "longcat-2.5-preview-free", name: "LongCat 2.5 Preview Free", supportedFormats: ["openai"] },
     { id: "mimo-v2.6-flash-free", name: "MiMo V2.6 Flash Free", supportedFormats: ["openai"] },
     { id: "mimo-v2.5-free", name: "MiMo V2.5 Free", supportedFormats: ["openai"] },
     { id: "ling-3.0-flash-fin-free", name: "Ling 3.0 Flash Fin Free", supportedFormats: ["openai"] },
     { id: "nemotron-3-ultra-free", name: "Nemotron 3 Ultra Free", supportedFormats: ["openai"] },
     { id: "nemotron-3.5-lightning-free", name: "Nemotron 3.5 Lightning Free", supportedFormats: ["openai"] },
+    { id: "space-bunny-free", name: "Space Bunny Free", supportedFormats: ["openai"] },
+    { id: "step-5-preview-free", name: "Step 5 Preview Free", supportedFormats: ["openai"] },
     // Free tier on the keyed lane (responses)
     { id: "muse-spark-1.3-contributor-free", name: "Muse Spark 1.3 Contributor Free", targetFormat: "openai-responses", supportedFormats: ["openai-responses"] },
     { id: "muse-spark-1.2-contributor-free", name: "Muse Spark 1.2 Contributor Free", targetFormat: "openai-responses", supportedFormats: ["openai-responses"] },
