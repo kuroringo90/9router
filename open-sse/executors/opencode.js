@@ -363,9 +363,8 @@ export class OpenCodeExecutor extends BaseExecutor {
       body.store = false;
       normalizeResponsesTools(body);
       sanitizeResponsesItems(body);
-      // Free-tier fingerprint tools are required even when an agent client
-      // already supplied tools. ZCode/Claude Code requests normally have
-      // non-empty tool arrays; skipping cloaking here triggers 403 FreeTierError.
+      // Canonicalize required tool names and preserve the native Responses
+      // fingerprint even when clients include their own tool declarations.
       applyFingerprintTools(body, true);
     } else if (body && typeof body === "object") {
       applyFingerprintTools(body, false);

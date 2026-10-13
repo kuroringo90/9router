@@ -64,7 +64,7 @@
        │   ↓ quota exhausted
        ├─→ [Tier 2: CHEAP] GLM ($0.6/1M), MiniMax ($0.2/1M)
        │   ↓ budget limit
-       └─→ [Tier 3: FREE] Kiro, OpenCode Free, Vertex ($300 credits)
+       └─→ [Tier 3: FREE] Kiro, Vertex ($300 credits)
 
 Result: Never stop coding, minimal cost + 20-40% token savings via RTK
 ```
@@ -84,7 +84,7 @@ npm install -g 9router
 
 **2. Connect a FREE provider (no signup needed):**
 
-Dashboard → Providers → Connect **Kiro AI** (~50 credits/month free: Claude 4.5 + GLM-5 + MiniMax) or **OpenCode Free** (no auth) → Done!
+Dashboard → Providers → Connect **Kiro AI** (~50 credits/month free: Claude 4.5 + GLM-5 + MiniMax) → Done!
 
 **3. Use in your CLI tool:**
 
@@ -397,10 +397,10 @@ Default URLs:
   </table>
 </div>
 
-> **Note:** iFlow, Qwen Code and Gemini CLI free tiers were discontinued in 2026. Use Kiro / OpenCode Free / Vertex instead.
+> **Note:** iFlow, Qwen Code and Gemini CLI free tiers were discontinued in 2026. Use Kiro / Vertex or another available provider instead.
 >
 > **Kiro AI** moved to a paid model in Sep 2025 — the free tier is now capped at **50 credits/month** (plus 500 trial credits for new accounts in the first 30 days). Paid tiers: Pro $20/mo (1,000 credits), Pro+ $40/mo (2,000), Pro Max $100/mo (5,000), Power $200/mo (10,000).
-> **OpenCode Free** model list fluctuates over time (some models free only for limited promos) — subject to change without notice.
+> OpenCode's free inference endpoint now rejects third-party clients with `403 FreeTierError`; `/zen/v1/models` being public does not mean inference is available through 9Router.
 > **Vertex AI**: the $300 free credit for new GCP accounts is still valid, but since Mar 2026 the **Gemini API endpoint no longer consumes these credits** — call the **Vertex AI Studio** endpoint instead.
 
 ### 🔑 API Key Providers (40+)

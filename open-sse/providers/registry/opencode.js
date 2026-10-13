@@ -1,6 +1,7 @@
 export default {
   id: "opencode",
   priority: 40,
+  disabled: true,
   hasFree: true,
   alias: "oc",
   uiAlias: "oc",
@@ -35,7 +36,14 @@ export default {
     { id: "muse-spark-1.2-contributor-free", name: "Muse Spark 1.2 Contributor Free", targetFormat: "openai-responses" },
     { id: "muse-spark-1.3-contributor-free", name: "Muse Spark 1.3 Contributor Free", targetFormat: "openai-responses" },
     { id: "union-alpha", name: "Union Alpha Free", targetFormat: "claude" },
+    { id: "cat-jam-free", name: "Cat Jam Free" },
     { id: "jev-1.13-free", name: "Jev 1.13 Free", kind: "systemone" },
+    { id: "ling-3.1-flash-free", name: "Ling 3.1 Flash Free" },
+    { id: "longcat-2.5-preview-free", name: "LongCat 2.5 Preview Free" },
+    { id: "mimo-v2.6-flash-free", name: "MiMo V2.6 Flash Free" },
+    { id: "nemotron-3.5-lightning-free", name: "Nemotron 3.5 Lightning Free" },
+    { id: "space-bunny-free", name: "Space Bunny Free" },
+    { id: "step-5-preview-free", name: "Step 5 Preview Free" },
   ],
   serviceKinds: ["llm", "systemone"],
   systemoneConfig: {
