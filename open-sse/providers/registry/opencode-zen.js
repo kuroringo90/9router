@@ -1,8 +1,6 @@
 export default {
   id: "opencode-zen",
   priority: 205,
-  hidden: true,
-  disabled: true,
   alias: "ocz",
   aliases: [
     "opencode-zen",
