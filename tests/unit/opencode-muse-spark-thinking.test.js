@@ -224,14 +224,12 @@ describe("OpenCode Free Muse Spark thinking", () => {
         description: "Run shell command",
         parameters: { type: "object", properties: {} },
       },
-      ...["bash", "read"].map((name) => ({
-        type: "function",
-        name,
-        description: "This tool is currently unavailable and must not be used.",
-        parameters: { type: "object", properties: {} },
-      })),
     ]);
     expect(out.tools.map((t) => t.name)).toEqual(["shell_client", "read", "shell"]);
+    // The appended pair carries OpenCode's own definitions verbatim (the free-tier
+    // gate fingerprints them), not the old "unavailable" placeholders.
+    expect(out.tools[1].description).toContain("Read the contents of a file");
+    expect(out.tools[2].description).toContain("Execute a shell command");
     expect(out.input.find((item) => item.type === "function_call").name).toBe("shell_client");
   });
 });
