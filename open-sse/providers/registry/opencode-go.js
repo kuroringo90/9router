@@ -1,8 +1,6 @@
 export default {
   id: "opencode-go",
   priority: 210,
-  hidden: true,
-  disabled: true,
   alias: "opencode-go",
   aliases: [
     "ocg",
