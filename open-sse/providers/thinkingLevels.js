@@ -50,6 +50,13 @@ const PATTERN_THINKING = [
   { provider: "codex", pattern: "*gpt-5.6-terra*", levels: [...CODEX_GPT_5_6_LEVELS, "ultra"] },
   { provider: "codex", pattern: "*gpt-5.6-luna*", levels: CODEX_GPT_5_6_LEVELS },
   { pattern: "*codex*", levels: ["low", "medium", "high", "xhigh"] }, // codex cannot disable thinking
+  // OpenCode Free lane (probed live 2026-10-14): mimo-v2.6-flash-free answers 200 to
+  // every reasoning_effort but ignores it — same prompt, six levels, identical
+  // reasoning_tokens (17); models.dev publishes no reasoning_options for the id.
+  // The deepseek branch below then coerces every choice to "high", so advertising
+  // a multi-level picker would be a lie: offer "high" only. Scoped to the
+  // "opencode" provider — mimo on other lanes keeps the generic set below.
+  { provider: "opencode", pattern: "*mimo*v2.6*", levels: ["high"] },
   { pattern: "*mimo*v2.6*", levels: ["none", "low", "medium", "high", "xhigh"] },
   // mimo-v2.5-pro on opencode-go rejects reasoning_effort "max" (probed live); v2.5 accepts it.
   { pattern: "*mimo*v2.5-pro*", levels: ["none", "low", "medium", "high", "xhigh"] },
