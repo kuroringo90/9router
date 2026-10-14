@@ -1,3 +1,17 @@
+# v0.5.99-mod (2026-10-14)
+
+Fork marker for `kuroringo90/9router` branch `mod`: upstream v0.5.99 plus the
+OpenCode Free work below. Version string is `0.5.99-mod` (valid semver
+prerelease), so the runtime User-Agent reads `9Router/0.5.99-mod`.
+
+## Fixes
+- **Capabilities**: add the missing OpenCode Free reasoning entries (`space-bunny-free`, `space-bunny`, `big-pickle`, `exo-free`, `fledge-alpha-free`, `longcat-2.0`, `longcat-2.0-free`, `longcat-2.5-preview-free`, `north-mini-code-free`, `ring-2.6-1t-free`, `x-preview-f-free`) so `reasoning_effort` is no longer silently stripped for ids newer than the tables (#2690)
+- **OpenCode Free**: align the request headers to stop the upstream `403 FreeTierError` — matching `x-opencode-session-id`, valid inverted-timestamp session ids, User-Agent `opencode/1.18.35`, `x-opencode-client: cli` (upstream PR #4806, cherry-picked with attribution)
+- **OpenCode Free**: sync the free-tier request fingerprint and the free model catalog (upstream PR #4814, cherry-picked with attribution)
+- **OpenCode Free**: keep the free routes enabled and discoverable — `/v1/models` lists the `oc/*` free models again and the dashboard no longer answers 410 on their connections
+- **OpenCode Free**: honest thinking levels — `oc/mimo-v2.6-flash-free` ships no effort field at all (the gateway accepts and ignores it), `oc/cat-jam-free` offers only `low/medium/high/xhigh` (the gateway 400s on `none` and `minimal`), and it gets a capabilities entry so its real reasoning is declared
+- **Translator**: clamp an unsupported `reasoning_effort` to the nearest supported step instead of forwarding it to strict upstreams; binary level sets (zai `["none","thinking"]`) stay untouched
+
 # v0.5.99 (2026-10-08)
 
 ## Features
