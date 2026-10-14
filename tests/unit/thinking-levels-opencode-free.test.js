@@ -59,3 +59,43 @@ describe("OpenCode Free: mimo v2.6 stays at its own default", () => {
     expect(body.reasoning_effort).toBe("low");
   });
 });
+
+// cat-jam-free (probed live 2026-10-14, 3 reps per level): the upstream answers
+// 400 to none AND minimal with {"param":"reasoning_effort","type":"invalid_value"},
+// while low/medium/high/xhigh return 200. Without any effort the model thinks less
+// (57-117 reasoning tokens) than with one (85-219), and the levels do not order
+// each other, so the picker only advertises what the gateway accepts.
+describe("OpenCode Free: cat-jam-free offers only what the gateway accepts", () => {
+  it("advertises low..xhigh, never none or minimal", () => {
+    expect(getThinkingLevels("opencode", "cat-jam-free")).toEqual([
+      "low", "medium", "high", "xhigh",
+    ]);
+  });
+
+  it("clamps unsupported levels instead of forwarding a 400", () => {
+    const wire = (level) => applyThinking(
+      "openai",
+      "cat-jam-free",
+      { model: "cat-jam-free", messages: [], reasoning_effort: level },
+      "opencode"
+    ).reasoning_effort;
+    expect(wire("none")).toBe("low");
+    expect(wire("minimal")).toBe("low");
+    expect(wire("low")).toBe("low");
+    expect(wire("high")).toBe("high");
+    expect(wire("xhigh")).toBe("xhigh");
+    expect(wire("max")).toBe("xhigh");
+  });
+
+  it("keeps the max/ultra clamp behaviour that already existed", () => {
+    const wire = (level) => applyThinking(
+      "openai",
+      "space-bunny-free",
+      { model: "space-bunny-free", messages: [], reasoning_effort: level },
+      "opencode"
+    ).reasoning_effort;
+    // space-bunny declares up to xhigh: max and ultra both land on xhigh.
+    expect(wire("max")).toBe("xhigh");
+    expect(wire("ultra")).toBe("xhigh");
+  });
+});
