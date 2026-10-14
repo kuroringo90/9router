@@ -169,11 +169,43 @@ function toLevel(cfg) {
   return null;
 }
 
-function normalizeOpenAILevel(level, supportedLevels) {
-  if (level !== "max" && level !== "ultra") return level;
-  if (supportedLevels?.includes(level)) return level;
-  if (level === "ultra" && supportedLevels?.includes("max")) return "max";
-  return "xhigh";
+// Effort ladder, weakest → strongest. Used to clamp a requested level the model
+// does not declare: an unsupported effort is a hard 400 on strict upstreams.
+const OPENAI_EFFORT_LADDER = ["none", "minimal", "low", "medium", "high", "xhigh", "max"];
+
+function normalizeOpenAILevel(level, supportedLevels, thinkingFormat) {
+  if (!supportedLevels?.length || supportedLevels.includes(level)) return level;
+  if (level === "max" || level === "ultra") {
+    if (level === "ultra" && supportedLevels.includes("max")) return "max";
+    return "xhigh";
+  }
+  // "minimal" is the thinking-off marker applyThinking() ships for models that
+  // cannot disable thinking: the claude-adaptive branch recognizes it and drops
+  // the thinking switch (a "thinking-off request asks for no thinking text").
+  // Clamping it onto the ladder would flip the request into "thinking on, low".
+  if (level === "minimal" && thinkingFormat === "claude-adaptive") return level;
+  // Nearest supported step, preferring the weaker side: an unsupported effort is a
+  // hard 400 on strict upstreams (cat-jam-free rejects none/minimal with
+  // {"param":"reasoning_effort","type":"invalid_value"}, probed live 2026-10-14),
+  // and a model that cannot disable thinking wants a floor, not a refusal.
+  // Only clamp when the declared set is an actual effort ladder: binary sets such
+  // as zai's ["none","thinking"] are off/on switches, not steps, and must keep
+  // whatever the client asked for.
+  const isEffortLadder = supportedLevels.some(
+    (l) => l !== "none" && OPENAI_EFFORT_LADDER.includes(l)
+  );
+  if (!isEffortLadder) return level;
+  const idx = OPENAI_EFFORT_LADDER.indexOf(level);
+  // Not a ladder step at all — a sentinel such as the adaptive "auto". Leave it
+  // for the adaptive pipeline (dropAdaptiveReasoningEffort) instead of clamping
+  // it onto the ladder.
+  if (idx === -1) return level;
+  const weaker = [...OPENAI_EFFORT_LADDER.slice(0, idx)].reverse()
+    .find((l) => supportedLevels.includes(l));
+  if (weaker) return weaker;
+  const stronger = OPENAI_EFFORT_LADDER.slice(idx + 1)
+    .find((l) => supportedLevels.includes(l));
+  return stronger ?? supportedLevels[supportedLevels.length - 1];
 }
 
 function toGeminiThinkingLevel(cfg) {
@@ -269,7 +301,7 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, display, model = "")
     case "openai": {
       if (none && canDisable) { body.reasoning_effort = "none"; break; }
       const level = toLevel(eff);
-      if (level) body.reasoning_effort = normalizeOpenAILevel(level, supportedLevels);
+      if (level) body.reasoning_effort = normalizeOpenAILevel(level, supportedLevels, caps.thinkingFormat);
       break;
     }
     case "openai-responses": {
@@ -282,7 +314,7 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, display, model = "")
         const current = body.reasoning && typeof body.reasoning === "object" && !Array.isArray(body.reasoning)
           ? body.reasoning
           : {};
-        body.reasoning = { ...current, effort: normalizeOpenAILevel(level, supportedLevels) };
+        body.reasoning = { ...current, effort: normalizeOpenAILevel(level, supportedLevels, caps.thinkingFormat) };
         if (!body.reasoning.summary) body.reasoning.summary = "auto";
       }
       delete body.reasoning_effort;
