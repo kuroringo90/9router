@@ -76,14 +76,14 @@ describe("OpenCode Zen free-tier request shape", () => {
     const executor = new OpenCodeZenExecutor();
     const chat = executor.transformRequest("cat-jam-free", { messages: [{ role: "user", content: "hi" }], stream: false }, false, {});
     expect(chat.stream).toBe(true);
-    expect(chat.tools.map((tool) => tool.function.name)).toEqual(["bash", "read"]);
+    expect(chat.tools.map((tool) => tool.function.name)).toEqual(["read", "shell"]);
 
     const responses = executor.transformRequest("muse-spark-1.3-contributor-free", {
       input: "hi", tools: [{ type: "function", name: "caller_tool", parameters: { type: "object", properties: {} } }],
       stream: false,
     }, false, {});
     expect(responses.stream).toBe(true);
-    expect(responses.tools.map((tool) => tool.name)).toEqual(["caller_tool", "bash", "read"]);
+    expect(responses.tools.map((tool) => tool.name)).toEqual(["caller_tool", "read", "shell"]);
   });
 });
 
