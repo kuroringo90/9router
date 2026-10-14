@@ -10,7 +10,7 @@ import { getModelTargetFormat, getModelSupportedFormats, getModelStrip, getModel
 import { PROVIDERS } from "../config/providers.js";
 import { createErrorResult, parseUpstreamError, formatProviderError } from "../utils/error.js";
 import { upstreamResponseHeaders } from "../utils/upstreamHeaders.js";
-import { HTTP_STATUS, TOKEN_SAVER_HEADER } from "../config/runtimeConfig.js";
+import { HTTP_STATUS, TOKEN_SAVER_HEADER, describeOpenCodeFreeTransport } from "../config/runtimeConfig.js";
 import { handleBypassRequest } from "../utils/bypassHandler.js";
 import { trackPendingRequest, appendRequestLog, saveRequestDetail } from "@/lib/usageDb.js";
 import { getExecutor } from "../executors/index.js";
@@ -494,6 +494,14 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     })).catch(() => { });
 
     const errMsg = formatProviderError(new Error(message), provider, model, statusCode);
+    // The OpenCode free gate fingerprints the endpoint + UA + tool set, not the
+    // session: when it answers 403 FreeTierError, print exactly what we sent so the
+    // next gate change can be read off the log alone (retune via OPENCODE_* in .env).
+    if (statusCode === HTTP_STATUS.FORBIDDEN && String(message).includes("FreeTierError")) {
+      const fingerprint = `OpenCode free gate rejected the request (fingerprint, not session) — ${describeOpenCodeFreeTransport(providerUrl)}. Retune via OPENCODE_* in .env and restart.`;
+      if (log?.errorLine) log.errorLine(reqTag, "✗", fingerprint);
+      else console.warn(`[OPENCODE] ${fingerprint}`);
+    }
     if (log?.errorLine) {
       const urlStr = providerUrl ? `\n    URL: ${providerUrl}` : "";
       log.errorLine(reqTag, "✗", `ERROR ${statusCode} · ${provider}/${model} · ${Date.now() - requestStartTime}ms${urlStr}\n    ${errMsg}`);

@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { BaseExecutor } from "./base.js";
 import { PROVIDERS } from "../config/providers.js";
-import { MEMORY_CONFIG } from "../config/runtimeConfig.js";
+import { MEMORY_CONFIG, OPENCODE_FREE, applyOpenCodeHeaderOverrides } from "../config/runtimeConfig.js";
 import { getThinkingLevels } from "../providers/thinkingLevels.js";
 import { injectReasoningContent } from "../utils/reasoningContentInjector.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
@@ -378,12 +378,13 @@ export class OpenCodeExecutor extends BaseExecutor {
   }
 
   // Free tier moved from /zen/v1 to /inference/v1 (OpenCode v2); /zen/v1 now
-  // answers every free request with 403 FreeTierError.
+  // answers every free request with 403 FreeTierError. OPENCODE_ENDPOINT
+  // (config/runtimeConfig.js) replaces the base when the gate moves again.
   buildUrl(model) {
-    const base = this.config.baseUrl;
-    if (isResponsesModel(model)) return `${base}/inference/v1/responses`;
-    if (isMessagesModel(model)) return `${base}/inference/v1/messages`;
-    return `${base}/inference/v1/chat/completions`;
+    const base = OPENCODE_FREE.endpoint || `${this.config.baseUrl}/inference/v1`;
+    if (isResponsesModel(model)) return `${base}/responses`;
+    if (isMessagesModel(model)) return `${base}/messages`;
+    return `${base}/chat/completions`;
   }
 
   buildHeaders(credentials, stream = true, url = "") {
@@ -398,11 +399,19 @@ export class OpenCodeExecutor extends BaseExecutor {
 
     // Mirrors the v2 CLI. Upstream needs x-opencode-session-id next to
     // x-opencode-session, and rejects any x-opencode-request (v1 only) with 403.
+    // UA precedence: an explicit OPENCODE_UA always wins (operator override), then
+    // OPENCODE_UA_MODE=pinned, then passthrough of a valid downstream v2 UA, then the
+    // built-in default. Endpoint and header set are the two levers the gate has
+    // reacted to so far — see OPENCODE_FREE in runtimeConfig.
+    const userAgent = (OPENCODE_FREE.uaExplicit || OPENCODE_FREE.uaMode === "pinned")
+      ? (OPENCODE_FREE.ua || OPENCODE_UA)
+      : (isOpencodeDownstream ? downstreamUa : OPENCODE_UA);
+
     const headers = {
       "Content-Type": "application/json",
       "Authorization": "Bearer public",
-      "User-Agent": isOpencodeDownstream ? downstreamUa : OPENCODE_UA,
-      "x-opencode-client": lower["x-opencode-client"] || OPENCODE_CLIENT,
+      "User-Agent": userAgent,
+      "x-opencode-client": OPENCODE_FREE.client || lower["x-opencode-client"] || OPENCODE_CLIENT,
       "x-opencode-session": session,
       "x-opencode-session-id": session,
       "x-session-affinity": session,
@@ -411,6 +420,6 @@ export class OpenCodeExecutor extends BaseExecutor {
       "Accept": stream ? "text/event-stream" : "*/*",
     };
     if (url.endsWith("/messages")) headers["anthropic-version"] = ANTHROPIC_API_VERSION;
-    return headers;
+    return applyOpenCodeHeaderOverrides(headers);
   }
 }
