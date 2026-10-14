@@ -176,12 +176,15 @@ export const MODEL_CAPABILITIES = {
   // OpenCode Free Union Alpha — multimodal (text+vision), 262K context, 131K max output
   "union-alpha": { vision: true, contextWindow: 262144, maxOutput: 131072 },
   // OpenCode Free Cat Jam — probed live 2026-10-14: streams reasoning deltas and
-  // reports reasoning_tokens (39-49 on a 90-token answer) on every call, but the id
-  // has no models.dev entry, so it fell through to DEFAULT_CAPABILITIES
-  // (reasoning: false) and applyThinking() silently stripped the client's
-  // reasoning_effort — the #2690 failure mode. No limits declared: the free lane's
-  // /zen/v1/models returns bare ids and models.dev publishes nothing for this id.
-  "cat-jam-free": { reasoning: true, thinkingFormat: "openai" },
+  // reports reasoning_tokens (39-49 on a 90-token answer, 57-117 with no effort on
+  // a 220-token answer) on every call, but the id has no models.dev entry, so it
+  // fell through to DEFAULT_CAPABILITIES (reasoning: false) and applyThinking()
+  // silently stripped the client's reasoning_effort — the #2690 failure mode.
+  // thinkingCanDisable: false because the upstream answers 400 to "none"
+  // ({"param":"reasoning_effort","type":"invalid_value"}) — the model always thinks.
+  // No limits declared: the free lane's /zen/v1/models returns bare ids and
+  // models.dev publishes nothing for this id.
+  "cat-jam-free": { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false },
   // ── OpenCode Free (reasoning: true in models.dev, ids newer than the tables above) ──
   // Without these entries getCapabilitiesForModel() falls through to
   // DEFAULT_CAPABILITIES (reasoning: false) and applyThinking() strips the client's

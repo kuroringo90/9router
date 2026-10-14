@@ -166,11 +166,35 @@ function toLevel(cfg) {
   return null;
 }
 
+// Effort ladder, weakest → strongest. Used to clamp a requested level the model
+// does not declare: an unsupported effort is a hard 400 on strict upstreams.
+const OPENAI_EFFORT_LADDER = ["none", "minimal", "low", "medium", "high", "xhigh", "max"];
+
 function normalizeOpenAILevel(level, supportedLevels) {
-  if (level !== "max" && level !== "ultra") return level;
-  if (supportedLevels?.includes(level)) return level;
-  if (level === "ultra" && supportedLevels?.includes("max")) return "max";
-  return "xhigh";
+  if (!supportedLevels?.length || supportedLevels.includes(level)) return level;
+  if (level === "max" || level === "ultra") {
+    if (level === "ultra" && supportedLevels.includes("max")) return "max";
+    return "xhigh";
+  }
+  // Nearest supported step, preferring the weaker side: an unsupported effort is a
+  // hard 400 on strict upstreams (cat-jam-free rejects none/minimal with
+  // {"param":"reasoning_effort","type":"invalid_value"}, probed live 2026-10-14),
+  // and a model that cannot disable thinking wants a floor, not a refusal.
+  // Only clamp when the declared set is an actual effort ladder: binary sets such
+  // as zai's ["none","thinking"] are off/on switches, not steps, and must keep
+  // whatever the client asked for.
+  const isEffortLadder = supportedLevels.some(
+    (l) => l !== "none" && OPENAI_EFFORT_LADDER.includes(l)
+  );
+  if (!isEffortLadder) return level;
+  const idx = OPENAI_EFFORT_LADDER.indexOf(level);
+  if (idx === -1) return supportedLevels[supportedLevels.length - 1];
+  const weaker = [...OPENAI_EFFORT_LADDER.slice(0, idx)].reverse()
+    .find((l) => supportedLevels.includes(l));
+  if (weaker) return weaker;
+  const stronger = OPENAI_EFFORT_LADDER.slice(idx + 1)
+    .find((l) => supportedLevels.includes(l));
+  return stronger ?? supportedLevels[supportedLevels.length - 1];
 }
 
 function toGeminiThinkingLevel(cfg) {

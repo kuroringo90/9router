@@ -55,6 +55,13 @@ const PATTERN_THINKING = [
   // and no effort field is shipped. Scoped to the "opencode" provider — mimo on other
   // lanes keeps the generic set below.
   { provider: "opencode", pattern: "*mimo*v2.6*", levels: [] },
+  // OpenCode Free Cat Jam (probed live 2026-10-14, 3 reps per level): the upstream
+  // answers 400 to none AND minimal ({"param":"reasoning_effort","type":"invalid_value"}),
+  // so the openai default set would advertise two guaranteed failures. low/medium/
+  // high/xhigh all return 200; with no effort the model thinks less (57-117
+  // reasoning tokens) than with any effort (85-219), and the levels do not order
+  // each other — the picker is kept only for what the gateway accepts.
+  { provider: "opencode", pattern: "cat-jam-free", levels: ["low", "medium", "high", "xhigh"] },
   { pattern: "*mimo*v2.6*", levels: ["none", "low", "medium", "high", "xhigh"] },
   // mimo-v2.5-pro on opencode-go rejects reasoning_effort "max" (probed live); v2.5 accepts it.
   { pattern: "*mimo*v2.5-pro*", levels: ["none", "low", "medium", "high", "xhigh"] },
