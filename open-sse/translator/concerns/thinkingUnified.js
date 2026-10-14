@@ -349,6 +349,11 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, display) {
     case "deepseek": {
       if (none && canDisable) { body.thinking = { type: "disabled" }; break; }
       body.thinking = { type: "enabled" };
+      // No declared levels = the gateway takes reasoning_effort but ignores it
+      // (OpenCode Free mimo v2.6, probed live: six levels, identical
+      // reasoning_tokens). Leave the model at its own default instead of shipping
+      // a field the upstream drops.
+      if (!supportedLevels?.length) break;
       // DeepSeek: low/medium→high, xhigh/max→max. Some backends (mimo v2.5-pro/v2.6
       // on opencode-go, probed live) 400 on "max" — clamp to high when the declared
       // levels exclude it.

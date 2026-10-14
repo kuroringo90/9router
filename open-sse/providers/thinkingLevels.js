@@ -52,11 +52,12 @@ const PATTERN_THINKING = [
   { pattern: "*codex*", levels: ["low", "medium", "high", "xhigh"] }, // codex cannot disable thinking
   // OpenCode Free lane (probed live 2026-10-14): mimo-v2.6-flash-free answers 200 to
   // every reasoning_effort but ignores it — same prompt, six levels, identical
-  // reasoning_tokens (17); models.dev publishes no reasoning_options for the id.
-  // The deepseek branch below then coerces every choice to "high", so advertising
-  // a multi-level picker would be a lie: offer "high" only. Scoped to the
-  // "opencode" provider — mimo on other lanes keeps the generic set below.
-  { provider: "opencode", pattern: "*mimo*v2.6*", levels: ["high"] },
+  // reasoning_tokens (17); models.dev publishes no reasoning_options for the id, and
+  // the deepseek branch of applyFormat() would otherwise coerce every choice to
+  // "high". An explicit empty set means "no picker": the model keeps its own default
+  // and no effort field is shipped. Scoped to the "opencode" provider — mimo on other
+  // lanes keeps the generic set below.
+  { provider: "opencode", pattern: "*mimo*v2.6*", levels: [] },
   { pattern: "*mimo*v2.6*", levels: ["none", "low", "medium", "high", "xhigh"] },
   // mimo-v2.5-pro on opencode-go rejects reasoning_effort "max" (probed live); v2.5 accepts it.
   { pattern: "*mimo*v2.5-pro*", levels: ["none", "low", "medium", "high", "xhigh"] },
@@ -107,6 +108,10 @@ export function getThinkingLevels(provider, model) {
     (!entry.provider || entry.provider === provider) && matchPattern(entry.pattern, model)
   );
   let levels = modelLevels || hit?.levels || FORMAT_LEVELS[caps.thinkingFormat] || L.base;
+  // An explicit empty level set means "the gateway accepts reasoning_effort but
+  // ignores it" (OpenCode Free mimo v2.6, probed live) — advertise no picker at all
+  // rather than a choice that does nothing.
+  if (levels.length === 0) return null;
   if (caps.thinkingCanDisable === false) levels = levels.filter((l) => l !== "none");
   return levels;
 }

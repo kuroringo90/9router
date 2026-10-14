@@ -5,12 +5,15 @@ import { applyThinking } from "../../open-sse/translator/concerns/thinkingUnifie
 // OpenCode Free (probed live 2026-10-14): mimo-v2.6-flash-free answers 200 to any
 // reasoning_effort but ignores it — same prompt, six levels, identical
 // reasoning_tokens (17) — and models.dev publishes no reasoning_options for the
-// id. The deepseek branch of applyFormat() then coerces every choice to "high",
-// so a multi-level picker would advertise a choice the model does not honour:
-// the free lane exposes "high" only. Other mimo lanes keep the generic set.
-describe("OpenCode Free thinking levels stay honest", () => {
-  it("offers only high for mimo v2.6 on the opencode free lane", () => {
-    expect(getThinkingLevels("opencode", "mimo-v2.6-flash-free")).toEqual(["high"]);
+// id. The model keeps thinking on its own (thinkingCanDisable: false), so the
+// honest shape is "no picker, no effort field": the request stays at the model's
+// default and nothing is advertised. Other mimo lanes keep the generic set.
+//
+// The provider argument is the canonical id ("opencode"): parseModel() resolves
+// the "oc" alias before applyThinking() runs.
+describe("OpenCode Free: mimo v2.6 stays at its own default", () => {
+  it("advertises no thinking levels on the opencode free lane", () => {
+    expect(getThinkingLevels("opencode", "mimo-v2.6-flash-free")).toBeNull();
   });
 
   it("keeps the generic mimo v2.6 set on other lanes", () => {
@@ -22,28 +25,37 @@ describe("OpenCode Free thinking levels stay honest", () => {
     ]);
   });
 
-  it("still normalises every requested level to high on the wire", () => {
+  it("ships no reasoning_effort, whatever the client asks for", () => {
     for (const level of ["low", "medium", "high", "xhigh"]) {
       const body = applyThinking(
         "openai",
-        "oc/mimo-v2.6-flash-free",
-        { model: "oc/mimo-v2.6-flash-free", messages: [], reasoning_effort: level },
-        "oc"
+        "mimo-v2.6-flash-free",
+        { model: "mimo-v2.6-flash-free", messages: [], reasoning_effort: level },
+        "opencode"
       );
-      expect(body.reasoning_effort).toBe("high");
+      expect(body.reasoning_effort).toBeUndefined();
+      // The model always thinks — keep declaring that, only the effort is dropped.
       expect(body.thinking).toEqual({ type: "enabled" });
     }
   });
 
-  it("keeps reasoning declared (the model really does think)", () => {
+  it("ships no effort when the client sends none either", () => {
     const body = applyThinking(
       "openai",
-      "oc/mimo-v2.6-flash-free",
-      { model: "oc/mimo-v2.6-flash-free", messages: [] },
-      "oc"
+      "mimo-v2.6-flash-free",
+      { model: "mimo-v2.6-flash-free", messages: [] },
+      "opencode"
     );
-    // reasoning:true is what keeps the thinking deltas and reasoning_tokens the
-    // upstream returns; only the effort picker was dishonest.
     expect(body.reasoning_effort).toBeUndefined();
+  });
+
+  it("does not touch lanes where the effort really works", () => {
+    const body = applyThinking(
+      "openai",
+      "space-bunny-free",
+      { model: "space-bunny-free", messages: [], reasoning_effort: "low" },
+      "opencode"
+    );
+    expect(body.reasoning_effort).toBe("low");
   });
 });
