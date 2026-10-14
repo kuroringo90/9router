@@ -96,3 +96,81 @@ export function resolveRetryEntry(entry) {
 export const SKIP_PATTERNS = [
   "Please write a 5-10 word title for the following conversation:"
 ];
+
+// ── OpenCode Free transport fingerprint ────────────────────────────────────────────────
+// The free-tier gate moved twice in three days (2026-10-13/14): /zen/v1 → /inference/v1,
+// the v1 "opencode/1.18.x" UA → the v2 "opencode/<channel>/<version>/<client>" shape, and
+// the tool fingerprint → OpenCode's own read/shell definitions (measured: same endpoint
+// and headers, placeholder tools → 403 FreeTierError, official definitions → 200).
+// Each of those so far meant a code edit + redeploy; these vars retune the fingerprint
+// from .env instead. Semantics (passthrough vs pinned, v1/v2 validity) stay in the
+// executors — a value here only ever overrides.
+function envStr(name, def) {
+  const raw = process.env[name];
+  return raw == null || raw === "" ? def : raw;
+}
+
+function envList(name) {
+  return envStr(name, "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+}
+
+function envJsonObj(name, def) {
+  const raw = process.env[name]?.trim();
+  if (!raw) return def;
+  try {
+    const value = JSON.parse(raw);
+    return value && typeof value === "object" && !Array.isArray(value) ? value : def;
+  } catch {
+    return def;
+  }
+}
+
+export const OPENCODE_FREE = {
+  // "" → the built-in /inference/v1 paths of the free lane. A value such as
+  // "https://opencode.ai/zen/v1" replaces the base of every free-lane URL
+  // (chat/messages/responses). Applies to the no-auth `oc` lane only.
+  endpoint: envStr("OPENCODE_ENDPOINT", ""),
+  // passthrough (default): keep a valid downstream OpenCode UA.
+  // pinned: always send OPENCODE_UA, whatever the client claims to be.
+  uaMode: envStr("OPENCODE_UA_MODE", "passthrough"),
+  // "" → the executor's own default (free lane: opencode/latest/2.0.26/cli).
+  ua: envStr("OPENCODE_UA", ""),
+  uaExplicit: process.env.OPENCODE_UA != null && process.env.OPENCODE_UA !== "",
+  // "" → keep whatever the downstream client sent (fallback: cli).
+  client: envStr("OPENCODE_CLIENT", ""),
+  // Header names (case-insensitive) to strip from the outgoing request.
+  dropHeaders: new Set(envList("OPENCODE_DROP_HEADERS")),
+  // Headers merged last, after everything else — the escape hatch for the next
+  // gate requirement, e.g. OPENCODE_EXTRA_HEADERS='{"x-foo":"bar"}'.
+  extraHeaders: envJsonObj("OPENCODE_EXTRA_HEADERS", {}),
+};
+
+// Strip the headers the gate rejects, then merge the escape hatch. Called last
+// by every OpenCode buildHeaders().
+export function applyOpenCodeHeaderOverrides(headers) {
+  for (const name of OPENCODE_FREE.dropHeaders) {
+    for (const key of Object.keys(headers)) {
+      if (key.toLowerCase() === name) delete headers[key];
+    }
+  }
+  for (const [key, value] of Object.entries(OPENCODE_FREE.extraHeaders)) {
+    if (typeof value === "string") headers[key] = value;
+  }
+  return headers;
+}
+
+// One line with everything that decides a free-lane request, logged when the gate
+// answers 403 FreeTierError so the next fingerprint change can be diagnosed from
+// the log alone.
+export function describeOpenCodeFreeTransport(url = "") {
+  const { endpoint, uaMode, ua, client, dropHeaders, extraHeaders } = OPENCODE_FREE;
+  return [
+    `endpoint=${endpoint || "(built-in /inference/v1)"}`,
+    `uaMode=${uaMode}`,
+    `ua=${ua || "(executor default)"}`,
+    `client=${client || "(passthrough)"}`,
+    `drop=[${[...dropHeaders].join(",")}]`,
+    `extra=${JSON.stringify(extraHeaders)}`,
+    url && `url=${url}`,
+  ].filter(Boolean).join(" ");
+}

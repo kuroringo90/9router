@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { DefaultExecutor } from "./default.js";
+import { OPENCODE_FREE, applyOpenCodeHeaderOverrides } from "../config/runtimeConfig.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
 import { isMuseSparkModel, isOpencodeFreeTierModel } from "../providers/models/helpers.js";
 import { OPENCODE_FINGERPRINT_TOOLS } from "../utils/opencodeFingerprint.js";
@@ -272,9 +273,14 @@ export class OpenCodeZenExecutor extends DefaultExecutor {
     const lower = {};
     for (const [k, v] of Object.entries(raw)) lower[k.toLowerCase()] = v;
     const downstreamUa = lower["user-agent"] || "";
-    // Free-tier gate: spoof the official client UA.
-    headers["User-Agent"] = hasValidOpencodeVersion(downstreamUa) ? downstreamUa : OPENCODE_UA;
-    headers["x-opencode-client"] = lower["x-opencode-client"] || "cli";
+    // Free-tier gate: spoof the official client UA. Precedence: explicit
+    // OPENCODE_UA > OPENCODE_UA_MODE=pinned > passthrough > built-in default
+    // (see config/runtimeConfig.js). OPENCODE_ENDPOINT targets the no-auth free
+    // lane only; this keyed lane keeps the registry transports.
+    headers["User-Agent"] = (OPENCODE_FREE.uaExplicit || OPENCODE_FREE.uaMode === "pinned")
+      ? (OPENCODE_FREE.ua || OPENCODE_UA)
+      : (hasValidOpencodeVersion(downstreamUa) ? downstreamUa : OPENCODE_UA);
+    headers["x-opencode-client"] = OPENCODE_FREE.client || lower["x-opencode-client"] || "cli";
     headers["x-opencode-project"] = lower["x-opencode-project"] || "global";
     const prepared = credentials?.[SESSION_FIELD];
     if (prepared) {
@@ -293,7 +299,7 @@ export class OpenCodeZenExecutor extends DefaultExecutor {
       headers["Authorization"] = "Bearer public";
       headers["x-opencode-request"] = generateRequestId();
     }
-    return headers;
+    return applyOpenCodeHeaderOverrides(headers);
   }
 
   transformRequest(model, body, stream, credentials) {

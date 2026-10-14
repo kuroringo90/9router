@@ -1,3 +1,5 @@
+import { OPENCODE_FREE } from "../../config/runtimeConfig.js";
+
 export default {
   id: "opencode",
   priority: 40,
@@ -48,8 +50,9 @@ export default {
   systemoneConfig: {
     baseUrl: "https://opencode.ai/zen/v1/systemone",
     headers: {
-      "x-opencode-client": "cli",
-      "User-Agent": "opencode/1.18.35",
+      // Same knobs as the chat lane: an explicit OPENCODE_CLIENT / OPENCODE_UA wins.
+      "x-opencode-client": OPENCODE_FREE.client || "cli",
+      "User-Agent": OPENCODE_FREE.uaExplicit ? OPENCODE_FREE.ua : "opencode/1.18.35",
     },
   },
   modelsFetcher: { url: "https://opencode.ai/zen/v1/models", type: "opencode-free" },
