@@ -3,8 +3,11 @@ import { normalizeNousFreeModels } from "open-sse/services/nous.js";
 // Free OpenCode models that don't use the "-free" id suffix
 const KNOWN_FREE_OPENCODE_MODELS = ["big-pickle"];
 
-// Upstream returns "Model is unavailable" for this id (2026-09-02) — re-enable when fixed
-const DEAD_FREE_OPENCODE_MODELS = new Set(["deepseek-v4-flash-free"]);
+// Upstream returns "Model is unavailable" for these ids — re-enable when fixed.
+// union-alpha probed live 2026-10-14: /zen/v1/messages answers 400
+// {"type":"api_error","message":"Upstream request failed: Model is unavailable."}
+// on every call, with and without reasoning_effort.
+const DEAD_FREE_OPENCODE_MODELS = new Set(["deepseek-v4-flash-free", "union-alpha"]);
 
 export const FILTERS = {
   "openrouter-free": (models) =>
