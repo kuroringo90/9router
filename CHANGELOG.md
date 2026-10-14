@@ -1,3 +1,36 @@
+# v0.6.0-mod (2026-10-14)
+
+Second mod release on top of upstream v0.5.99. The OpenCode free gate changed on
+2026-10-13/14 and started answering every proxied request with 403 FreeTierError;
+this release restores the lane and makes the fingerprint adjustable without a
+rebuild. Version string is `0.6.0-mod` (valid semver prerelease), so the runtime
+User-Agent reads `9Router/0.6.0-mod`.
+
+## Fixes
+- **OpenCode Free**: restore free-tier inference — adopt upstream PR #4842
+  (cherry-picked with attribution): the free lane moves to `/inference/v1`, the v2
+  `opencode/<channel>/<version>/<client>` UA shape, both session headers, no
+  `x-opencode-request`, and OpenCode's own `read`/`shell` tool definitions.
+  Measured on 2026-10-14: same endpoint and headers, placeholder tools → 403,
+  official definitions → 200; the UA string itself turns out not to matter.
+- **Tests**: fix the cherry-picked PR's contradictory expectations (a
+  `slice(0, 1)` compared against three entries) and assert the official
+  fingerprint in the muse-spark and zen free-tier tests
+
+## Features
+- **OpenCode Free**: fingerprint tunable from the environment —
+  `OPENCODE_ENDPOINT`, `OPENCODE_UA_MODE`, `OPENCODE_UA`, `OPENCODE_CLIENT`,
+  `OPENCODE_DROP_HEADERS`, `OPENCODE_EXTRA_HEADERS`. Precedence is env >
+  downstream > default, and with none of them set the wire is byte-identical to
+  before.
+- **Dashboard**: "OpenCode Free fingerprint" card in Profile — persisted
+  settings are mirrored into `process.env` through live getters, so a change
+  applies to the next request (no restart); reset restores the `.env` boot
+  values instead of leaving a hole.
+- **Diagnostics**: one honest log line on `403 FreeTierError` listing the
+  effective fingerprint (endpoint, ua mode, ua, client, drop, extra, url) and
+  the `OPENCODE_*` knobs to retune.
+
 # v0.5.99-mod (2026-10-14)
 
 Fork marker for `kuroringo90/9router` branch `mod`: upstream v0.5.99 plus the
