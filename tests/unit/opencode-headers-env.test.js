@@ -137,3 +137,50 @@ describe("registry + diagnostics", () => {
     expect(line).toContain("url=https://opencode.ai/zen/v1/chat/completions");
   });
 });
+
+describe("live process.env (the dashboard writes at runtime)", () => {
+  it("applies a change to the next buildUrl/buildHeaders without a module reload", async () => {
+    const { OpenCodeExecutor, runtimeConfig } = await load();
+    const ex = new OpenCodeExecutor();
+    expect(ex.buildUrl("mimo-v2.6-flash-free")).toContain("/inference/v1/");
+    process.env.OPENCODE_ENDPOINT = "https://opencode.ai/zen/v1";
+    try {
+      expect(runtimeConfig.OPENCODE_FREE.endpoint).toBe("https://opencode.ai/zen/v1");
+      expect(ex.buildUrl("mimo-v2.6-flash-free")).toBe("https://opencode.ai/zen/v1/chat/completions");
+      expect(buildHeaders(ex, {})["x-opencode-project"]).toBe("global");
+    } finally {
+      delete process.env.OPENCODE_ENDPOINT;
+    }
+  });
+});
+
+describe("applyOpenCodeFreeEnv (dashboard settings → process.env)", () => {
+  it("overrides, leaves .env values alone when unset, clears only what it managed", async () => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+    vi.stubEnv("DATA_DIR", "/tmp/opencode/test-data-opencode-env");
+    process.env.OPENCODE_ENDPOINT = "https://from-dotenv.example/v1";
+    const { applyOpenCodeFreeEnv } = await import("../../src/lib/opencodeFreeEnv.js");
+
+    // A persisted value overrides the boot value and is remembered as managed.
+    applyOpenCodeFreeEnv({ openCodeEndpoint: "https://managed.example/v1", openCodeUaMode: "pinned" });
+    expect(process.env.OPENCODE_ENDPOINT).toBe("https://managed.example/v1");
+    expect(process.env.OPENCODE_UA_MODE).toBe("pinned");
+    expect(process.env.OPENCODE_FREE_MANAGED).toContain("OPENCODE_ENDPOINT");
+
+    // undefined = never touched by the dashboard → clearing must NOT drop the .env value.
+    applyOpenCodeFreeEnv({ openCodeEndpoint: undefined });
+    expect(process.env.OPENCODE_ENDPOINT).toBe("https://managed.example/v1");
+
+    // Explicit empty = user reset → restore the boot (.env) value we overwrote.
+    applyOpenCodeFreeEnv({ openCodeEndpoint: "" });
+    expect(process.env.OPENCODE_ENDPOINT).toBe("https://from-dotenv.example/v1");
+    expect(process.env.OPENCODE_UA_MODE).toBe("pinned");
+
+    // An operator's own .env value that we never managed is never deleted.
+    applyOpenCodeFreeEnv({ openCodeUaMode: "" });
+    expect(process.env.OPENCODE_UA_MODE).toBeUndefined();
+
+    delete process.env.OPENCODE_FREE_MANAGED;
+  });
+});

@@ -125,24 +125,27 @@ function envJsonObj(name, def) {
   }
 }
 
+// Getters, not precomputed values: the dashboard writes these into process.env at
+// runtime (src/lib/opencodeFreeEnv.js), so a fingerprint change must take effect on
+// the next request instead of at boot.
 export const OPENCODE_FREE = {
   // "" → the built-in /inference/v1 paths of the free lane. A value such as
   // "https://opencode.ai/zen/v1" replaces the base of every free-lane URL
   // (chat/messages/responses). Applies to the no-auth `oc` lane only.
-  endpoint: envStr("OPENCODE_ENDPOINT", ""),
+  get endpoint() { return envStr("OPENCODE_ENDPOINT", ""); },
   // passthrough (default): keep a valid downstream OpenCode UA.
   // pinned: always send OPENCODE_UA, whatever the client claims to be.
-  uaMode: envStr("OPENCODE_UA_MODE", "passthrough"),
+  get uaMode() { return envStr("OPENCODE_UA_MODE", "passthrough"); },
   // "" → the executor's own default (free lane: opencode/latest/2.0.26/cli).
-  ua: envStr("OPENCODE_UA", ""),
-  uaExplicit: process.env.OPENCODE_UA != null && process.env.OPENCODE_UA !== "",
+  get ua() { return envStr("OPENCODE_UA", ""); },
+  get uaExplicit() { const v = process.env.OPENCODE_UA; return v != null && v !== ""; },
   // "" → keep whatever the downstream client sent (fallback: cli).
-  client: envStr("OPENCODE_CLIENT", ""),
+  get client() { return envStr("OPENCODE_CLIENT", ""); },
   // Header names (case-insensitive) to strip from the outgoing request.
-  dropHeaders: new Set(envList("OPENCODE_DROP_HEADERS")),
+  get dropHeaders() { return new Set(envList("OPENCODE_DROP_HEADERS")); },
   // Headers merged last, after everything else — the escape hatch for the next
   // gate requirement, e.g. OPENCODE_EXTRA_HEADERS='{"x-foo":"bar"}'.
-  extraHeaders: envJsonObj("OPENCODE_EXTRA_HEADERS", {}),
+  get extraHeaders() { return envJsonObj("OPENCODE_EXTRA_HEADERS", {}); },
 };
 
 // Strip the headers the gate rejects, then merge the escape hatch. Called last
