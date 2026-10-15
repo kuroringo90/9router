@@ -1,3 +1,7 @@
+# v0.6.2-mod (2026-10-15)
+
+Release note: proxy per-leg connect timeouts, detailed proxy errors, strict-proxy fail-fast, faster stall detection (150s), first-chunk timeout (200s).
+
 # v0.6.1-mod (2026-10-15)
 
 Third mod release. Fixes a tool-call regression left by the fingerprint
