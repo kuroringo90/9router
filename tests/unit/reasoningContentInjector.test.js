@@ -5,7 +5,7 @@
  * messages omit `reasoning_content` ("The `reasoning_content` in the thinking
  * mode must be passed back to the API."). OpenAI-format clients strip it, so
  * the injector echoes a placeholder back. These tests lock that behavior and
- * guard that the OpenCode executor (which routes deepseek-v4-flash-free)
+ * guard that the OpenCode executor (which routes deepseek-v4.1-flash-free)
  * actually runs the injector.
  */
 
@@ -27,7 +27,7 @@ describe("injectReasoningContent — DeepSeek thinking round-trip", () => {
   it("injects reasoning_content on a deepseek- assistant message that lacks it", () => {
     const out = injectReasoningContent({
       provider: "opencode",
-      model: "deepseek-v4-flash-free",
+      model: "deepseek-v4.1-flash-free",
       body: bodyWith([{ role: "user", content: "hi" }, assistantWithToolCall]),
     });
     const assistant = out.messages.find((m) => m.role === "assistant");
@@ -39,7 +39,7 @@ describe("injectReasoningContent — DeepSeek thinking round-trip", () => {
     const original = "model's real chain of thought";
     const out = injectReasoningContent({
       provider: "opencode",
-      model: "deepseek-v4-flash-free",
+      model: "deepseek-v4.1-flash-free",
       body: bodyWith([{ ...assistantWithToolCall, reasoning_content: original }]),
     });
     expect(out.messages[0].reasoning_content).toBe(original);
@@ -148,10 +148,10 @@ describe("injectReasoningContent — MiniMax thinking round-trip", () => {
 });
 
 describe("OpenCodeExecutor — issue #1543 regression", () => {
-  it("runs the injector so deepseek-v4-flash-free round-trips reasoning_content", () => {
+  it("runs the injector so deepseek-v4.1-flash-free round-trips reasoning_content", () => {
     const executor = new OpenCodeExecutor();
     const out = executor.transformRequest(
-      "deepseek-v4-flash-free",
+      "deepseek-v4.1-flash-free",
       bodyWith([{ role: "user", content: "hi" }, assistantWithToolCall]),
     );
     const assistant = out.messages.find((m) => m.role === "assistant");
