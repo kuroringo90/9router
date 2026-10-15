@@ -8,6 +8,7 @@ import { parseSSELine, hasValuableContent, fixInvalidId, formatSSE, ensureStream
 import { restoreToolNames } from "./opencodeFingerprint.js";
 import { getOpenAIResponsesEventName, isOpenAIResponsesTerminalEvent, formatIncompleteOpenAIResponsesStreamFailure } from "./responsesStreamHelpers.js";
 import { dbg, isDebugEnabled } from "./debugLog.js";
+import { decloakStreamChunk } from "./claudeCloaking.js";
 
 import { SSE_DONE, SSE_HEADERS, SSE_HEADERS_NO_BUFFER } from "./sseConstants.js";
 
@@ -191,12 +192,15 @@ export function createSSEStream(options = {}) {
               const toolCallIdFixed = ensureStreamToolCallIds(parsed, seenToolCallIds);
 
               // The fingerprint pass renames a colliding caller tool to an alias
-              // (read -> read_client). On this path nothing restored it, so the
-              // client received a call to a tool it never declared and answered
-              // "Model tried to call unavailable tool 'read_client'" (#4986).
+              // (read -> read_client), and Claude OAuth cloaking renames caller
+              // tools too (tool -> tool_ide). Same-format streams skip the
+              // translator that undoes both, so restore them right here — the
+              // client otherwise receives a call to a tool it never declared
+              // and answers "Model tried to call unavailable tool 'read_client'"
+              // (#4986).
               let toolNameRestored = false;
               if (toolNameMap?.size) {
-                const restored = restoreToolNames(parsed, toolNameMap);
+                const restored = restoreToolNames(decloakStreamChunk(parsed, toolNameMap), toolNameMap);
                 if (restored !== parsed) {
                   parsed = restored;
                   toolNameRestored = true;
@@ -610,6 +614,7 @@ export function createPassthroughStreamWithLogger(provider = null, reqLogger = n
     connectionId,
     body,
     onStreamComplete,
-    apiKey
+    apiKey,
+    toolNameMap
   });
 }
