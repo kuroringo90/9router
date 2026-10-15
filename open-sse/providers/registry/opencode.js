@@ -4,6 +4,7 @@ export default {
   id: "opencode",
   priority: 40,
   hasFree: true,
+  stallTimeoutMs: 150000,
   alias: "oc",
   uiAlias: "oc",
   display: {

@@ -133,10 +133,11 @@ export class BaseExecutor {
 
       if (!retryAttemptsByUrl[urlIndex]) retryAttemptsByUrl[urlIndex] = 0;
 
-      // Abort if upstream doesn't return response headers within connection timeout
+      // Outer guard: each proxyFetch leg now has its own connect budget (FETCH_CONNECT_TIMEOUT_MS),
+      // so this timer is a last-resort aggregate deadline, not a per-leg one.
       const connectCtrl = new AbortController();
-      const timeoutMs = this.config?.timeoutMs || FETCH_CONNECT_TIMEOUT_MS;
-      const connectTimer = setTimeout(() => connectCtrl.abort(new Error("fetch connect timeout")), timeoutMs);
+      const timeoutMs = (this.config?.timeoutMs || FETCH_CONNECT_TIMEOUT_MS) * 2;
+      const connectTimer = setTimeout(() => connectCtrl.abort(new Error("fetch connect timeout (outer)")), timeoutMs);
       const mergedSignal = signal ? AbortSignal.any([signal, connectCtrl.signal]) : connectCtrl.signal;
 
       try {
