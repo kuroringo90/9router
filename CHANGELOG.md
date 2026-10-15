@@ -1,3 +1,27 @@
+# v0.6.1-mod (2026-10-15)
+
+Third mod release. Fixes a tool-call regression left by the fingerprint
+aliasing of `0.6.0-mod`: an OpenCode client pointed at 9router could not execute
+`shell`, because the model's answer came back under the internal alias
+`shell_client` on same-format streams. Version string is `0.6.1-mod` (valid
+semver prerelease), so the runtime User-Agent reads `9Router/0.6.1-mod`.
+
+## Fixes
+- **OpenCode Free**: restore aliased tool names on same-format streams — the
+  request side renames a caller's `read`/`shell` to `read_client`/`shell_client`
+  so OpenCode's exact definitions can travel under the real names, and the
+  response side has to rename them back. `translateResponse()` and the
+  non-streaming handlers did, but a stream whose client format equals the
+  provider format never reaches `translateResponse()`: `streamingHandler` falls
+  back to `createPassthroughStreamWithLogger()`, which forwarded bytes verbatim.
+  The client therefore received a `function_call` for a tool it never declared
+  and failed the call. The rename map is now handed to the passthrough stream,
+  which restores names on the parsed SSE payload — Claude OAuth cloaking
+  (`tool_ide`) had the same hole and is covered by the same line.
+- **Translator**: `restoreToolNames()` returns the original object when no name
+  matched, so callers can detect a real rename by identity and re-serialize only
+  the payloads that changed.
+
 # v0.6.0-mod (2026-10-14)
 
 Second mod release on top of upstream v0.5.99. The OpenCode free gate changed on
