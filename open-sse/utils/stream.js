@@ -5,6 +5,8 @@ import { extractUsage, mergeUsage, hasValidUsage, estimateUsage, logUsage, addBu
 import { parseSSELine, hasValuableContent, fixInvalidId, formatSSE } from "./streamHelpers.js";
 import { getOpenAIResponsesEventName, isOpenAIResponsesTerminalEvent, formatIncompleteOpenAIResponsesStreamFailure } from "./responsesStreamHelpers.js";
 import { dbg, isDebugEnabled } from "./debugLog.js";
+import { restoreToolNames } from "./opencodeFingerprint.js";
+import { decloakStreamChunk } from "./claudeCloaking.js";
 
 import { SSE_DONE, SSE_HEADERS, SSE_HEADERS_NO_BUFFER } from "./sseConstants.js";
 
@@ -166,7 +168,8 @@ export function createSSEStream(options = {}) {
 
           if (trimmed.startsWith("data:") && trimmed.slice(5).trim() !== "[DONE]") {
             try {
-              const parsed = JSON.parse(trimmed.slice(5).trim());
+              let parsed = JSON.parse(trimmed.slice(5).trim());
+              let namesRestored = false;
 
               const idFixed = fixInvalidId(parsed);
 
@@ -205,6 +208,20 @@ export function createSSEStream(options = {}) {
                 }
               }
 
+              // Same-format streams never reach translateResponse(), so the
+              // request-side tool aliases have to be undone right here:
+              //  - OpenCode free fingerprint (shell → shell_client, read → read_client)
+              //  - Claude OAuth cloaking (tool → tool_ide)
+              // Without this the client receives a function_call for a tool it
+              // never declared and fails the call ("unknown tool shell_client").
+              if (toolNameMap?.size) {
+                const restored = restoreToolNames(decloakStreamChunk(parsed, toolNameMap), toolNameMap);
+                if (restored !== parsed) {
+                  parsed = restored;
+                  namesRestored = true;
+                }
+              }
+
               if (!hasValuableContent(parsed, FORMATS.OPENAI)) {
                 continue;
               }
@@ -240,7 +257,7 @@ export function createSSEStream(options = {}) {
                 parsed.usage = filterUsageForFormat(buffered, FORMATS.OPENAI);
                 output = `data: ${JSON.stringify(parsed)}\n`;
                 injectedUsage = true;
-              } else if (idFixed || fieldsInjected) {
+              } else if (idFixed || fieldsInjected || namesRestored) {
                 output = `data: ${JSON.stringify(parsed)}\n`;
                 injectedUsage = true;
               }
@@ -553,7 +570,7 @@ export function createSSETransformStreamWithLogger(targetFormat, sourceFormat, p
   });
 }
 
-export function createPassthroughStreamWithLogger(provider = null, reqLogger = null, model = null, connectionId = null, body = null, onStreamComplete = null, apiKey = null) {
+export function createPassthroughStreamWithLogger(provider = null, reqLogger = null, model = null, connectionId = null, body = null, onStreamComplete = null, apiKey = null, toolNameMap = null) {
   return createSSEStream({
     mode: STREAM_MODE.PASSTHROUGH,
     provider,
@@ -562,6 +579,7 @@ export function createPassthroughStreamWithLogger(provider = null, reqLogger = n
     connectionId,
     body,
     onStreamComplete,
-    apiKey
+    apiKey,
+    toolNameMap
   });
 }
