@@ -270,16 +270,23 @@ export function takeRenamedToolNames(body) {
 
 // Response side -------------------------------------------------------------
 
-/** Restore caller tool spellings in supported response/event shapes. */
+/** Restore caller tool spellings in supported response/event shapes.
+ * Returns `payload` unchanged (same reference) when no name was rewritten, so
+ * callers can detect an actual rename with `restored !== payload`. */
 export function restoreToolNames(payload, map) {
   if (!map?.size || !payload) return payload;
-  if (Array.isArray(payload)) return payload.map((item) => restoreToolNames(item, map));
+  if (Array.isArray(payload)) {
+    const out = payload.map((item) => restoreToolNames(item, map));
+    return out.every((item, i) => item === payload[i]) ? payload : out;
+  }
   if (typeof payload !== "object") return payload;
 
   let out = payload;
+  let changed = false;
   const put = (key, value) => {
     if (out === payload) out = { ...payload };
     out[key] = value;
+    changed = true;
   };
 
   // Claude streaming content_block_start event.
@@ -292,16 +299,17 @@ export function restoreToolNames(payload, map) {
 
   // Claude non-streaming message body.
   if (Array.isArray(payload.content)) {
-    put("content", payload.content.map((block) =>
+    const content = payload.content.map((block) =>
       block?.type === "tool_use" && typeof block.name === "string" && map.has(block.name)
         ? { ...block, name: map.get(block.name) }
-        : block));
+        : block);
+    if (content.some((block, i) => block !== payload.content[i])) put("content", content);
   }
 
   // OpenAI Chat Completions, both streaming delta and JSON message shapes.
   if (Array.isArray(payload.choices)) {
-    put("choices", payload.choices.map((choice) => {
-      let changed = false;
+    const choices = payload.choices.map((choice) => {
+      let changedChoice = false;
       const next = { ...choice };
       for (const holder of ["delta", "message"]) {
         const value = choice?.[holder];
@@ -309,23 +317,25 @@ export function restoreToolNames(payload, map) {
         const calls = value.tool_calls.map((call) => {
           const name = call?.function?.name;
           if (typeof name === "string" && map.has(name)) {
-            changed = true;
+            changedChoice = true;
             return { ...call, function: { ...call.function, name: map.get(name) } };
           }
           return call;
         });
-        next[holder] = { ...value, tool_calls: calls };
+        if (changedChoice) next[holder] = { ...value, tool_calls: calls };
       }
-      return changed ? next : choice;
-    }));
+      return changedChoice ? next : choice;
+    });
+    if (choices.some((choice, i) => choice !== payload.choices[i])) put("choices", choices);
   }
 
   // OpenAI Responses final JSON body.
   if (Array.isArray(payload.output)) {
-    put("output", payload.output.map((item) =>
+    const output = payload.output.map((item) =>
       item?.type === "function_call" && typeof item.name === "string" && map.has(item.name)
         ? { ...item, name: map.get(item.name) }
-        : item));
+        : item);
+    if (output.some((item, i) => item !== payload.output[i])) put("output", output);
   }
 
   // OpenAI Responses SSE events such as response.output_item.added/done.
@@ -334,5 +344,5 @@ export function restoreToolNames(payload, map) {
     put("item", { ...item, name: map.get(item.name) });
   }
 
-  return out;
+  return changed ? out : payload;
 }
