@@ -3,6 +3,7 @@
 const KNOWN_FREE_OPENCODE_MODELS = [
   "big-pickle",
   "cat-jam-free",
+  "deepseek-v4.1-flash-free",
   "jev-1.13-free",
   "ling-3.1-flash-free",
   "longcat-2.5-preview-free",
@@ -18,7 +19,7 @@ const KNOWN_FREE_OPENCODE_MODELS = [
 // union-alpha probed live 2026-10-14: /zen/v1/messages answers 400
 // {"type":"api_error","message":"Upstream request failed: Model is unavailable."}
 // on every call, with and without reasoning_effort.
-const DEAD_FREE_OPENCODE_MODELS = new Set(["deepseek-v4-flash-free", "union-alpha"]);
+const DEAD_FREE_OPENCODE_MODELS = new Set(["union-alpha"]);
 
 export const FILTERS = {
   "openrouter-free": (models) =>

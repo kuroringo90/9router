@@ -1,3 +1,9 @@
+# v0.6.3-mod (2026-10-15)
+
+## Changes
+- **OpenCode Free**: add `deepseek-v4.1-flash-free`; remove retired `deepseek-v4-flash-free` from routing metadata.
+- **Version**: bump to 0.6.3-mod.
+
 # v0.6.2-mod (2026-10-15)
 
 Release note: proxy per-leg connect timeouts, detailed proxy errors, strict-proxy fail-fast, faster stall detection (150s), first-chunk timeout (200s).
