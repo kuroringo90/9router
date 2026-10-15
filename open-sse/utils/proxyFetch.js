@@ -1,5 +1,5 @@
 import { Readable } from "stream";
-import { MEMORY_CONFIG } from "../config/runtimeConfig.js";
+import { MEMORY_CONFIG, FETCH_CONNECT_TIMEOUT_MS } from "../config/runtimeConfig.js";
 import { dbg } from "./debugLog.js";
 
 const originalFetch = globalThis.fetch;
@@ -163,6 +163,23 @@ function shouldBypassMitmDns(url) {
   } catch { return false; }
 }
 
+function maskProxyUrl(proxyUrl) {
+  try {
+    const parsed = new URL(proxyUrl);
+    if (parsed.username || parsed.password) {
+      parsed.username = "****";
+      parsed.password = "****";
+    }
+    return parsed.toString();
+  } catch {
+    return String(proxyUrl ?? "");
+  }
+}
+
+function targetHost(url) {
+  try { return new URL(url).hostname; } catch { return String(url); }
+}
+
 function shouldBypassByNoProxy(targetUrl, noProxyValue) {
   const noProxy = normalizeString(noProxyValue);
   if (!noProxy) return false;
@@ -251,10 +268,28 @@ async function getDispatcher(proxyUrl, insecure = false) {
   return proxyDispatchers.get(key);
 }
 
-async function fetchWithTlsFallback(url, options, proxyUrl) {
+async function fetchWithTlsFallback(url, options = {}, proxyUrl, connectTimeoutMs = FETCH_CONNECT_TIMEOUT_MS) {
+  const ms = (typeof options?.connectTimeoutMs === "number" && options.connectTimeoutMs > 0)
+    ? options.connectTimeoutMs : connectTimeoutMs;
+  const callerSignal = options?.signal;
+  // Fail-fast on an already-aborted caller signal instead of waiting for the leg timer.
+  if (callerSignal?.aborted) {
+    const reason = callerSignal.reason;
+    if (reason instanceof Error) throw reason;
+    const e = new Error("This operation was aborted");
+    e.name = "AbortError";
+    throw e;
+  }
+  const timeoutCtrl = new AbortController();
+  const timer = setTimeout(() => timeoutCtrl.abort(new Error(`fetch connect timeout (${ms}ms, proxy=${proxyUrl ? "yes" : "direct"})`)), ms);
+  const mergedCallerSignal = options?.signal;
+  const signal = (mergedCallerSignal && typeof AbortSignal !== "undefined" && typeof AbortSignal.any === "function")
+    ? AbortSignal.any([mergedCallerSignal, timeoutCtrl.signal])
+    : timeoutCtrl.signal;
+  const baseOpts = { ...options, signal: mergedCallerSignal && mergedCallerSignal.aborted ? timeoutCtrl.signal : signal };
   try {
     const dispatcher = proxyUrl ? await getDispatcher(proxyUrl) : undefined;
-    return await originalFetch(url, dispatcher ? { ...options, dispatcher } : options);
+    return await originalFetch(url, dispatcher ? { ...baseOpts, dispatcher } : baseOpts);
   } catch (err) {
     const isStrictSsl = process.env.STRICT_SSL === "true" || process.env.STRICT_SSL === "1";
     if (!isStrictSsl && isTlsCertError(err)) {
@@ -264,9 +299,11 @@ async function fetchWithTlsFallback(url, options, proxyUrl) {
       // ponytail: in-memory insecure agent fallback for self-signed MITM corporate/antivirus certs
       console.warn(`[ProxyFetch] TLS cert verification failed (${err.cause?.code || err.code}), retrying with insecure TLS: ${url}`);
       const insecureDispatcher = await getDispatcher(proxyUrl, true);
-      return await originalFetch(url, { ...options, dispatcher: insecureDispatcher });
+      return await originalFetch(url, { ...baseOpts, dispatcher: insecureDispatcher });
     }
     throw err;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -358,10 +395,13 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       try {
         return await fetchWithTlsFallback(url, options, proxyUrl);
       } catch (proxyError) {
+        const why = `${proxyError?.name || "Error"}: ${proxyError?.message || proxyError}`;
         if (proxyOptions?.strictProxy === true) {
-          throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
+          throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true) | target=${targetHost(targetUrl)} proxy=${maskProxyUrl(proxyUrl)} | ${why}`);
         }
-        console.warn(`[ProxyFetch] Proxy failed, falling back to direct bypass: ${proxyError.message}`);
+        // Do not replay on a caller-initiated abort — it will abort again immediately.
+        if (options?.signal?.aborted) throw proxyError;
+        console.warn(`[ProxyFetch] Proxy failed -> direct bypass | target=${targetHost(targetUrl)} proxy=${maskProxyUrl(proxyUrl)} | ${why}`);
       }
     }
     // No proxy — manually resolve real IP to bypass DNS spoof
@@ -379,10 +419,13 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       return await fetchWithTlsFallback(url, options, proxyUrl);
     } catch (proxyError) {
       // If strictProxy is enabled, fail hard instead of falling back to direct
+      const why = `${proxyError?.name || "Error"}: ${proxyError?.message || proxyError}`;
       if (proxyOptions?.strictProxy === true) {
-        throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
+        throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true) | target=${targetHost(targetUrl)} proxy=${maskProxyUrl(proxyUrl)} | ${why}`);
       }
-      console.warn(`[ProxyFetch] Proxy failed, falling back to direct: ${proxyError.message}`);
+      // Fail-fast on a caller-initiated abort — replaying direct would abort again.
+      if (options?.signal?.aborted) throw proxyError;
+      console.warn(`[ProxyFetch] Proxy failed -> direct | target=${targetHost(targetUrl)} proxy=${maskProxyUrl(proxyUrl)} | ${why}`);
       return fetchWithTlsFallback(url, options, null);
     }
   }
