@@ -1,3 +1,40 @@
+# v0.5.104-mod (2026-10-15)
+
+Mod release for `kuroringo90/9router` branch `mod`: upstream **v0.5.104** plus the
+fork-only work below. Upstream has already absorbed most of the earlier OpenCode Free
+fixes (#4780, #4784, #4805, #4842), so only what is still unique to this fork is
+layered on top. Version string is `0.5.104-mod` (valid semver prerelease), so the
+runtime User-Agent reads `9Router/0.5.104-mod`.
+
+## Features
+- **OpenCode Free — tunable fingerprint**: `OPENCODE_ENDPOINT`, `OPENCODE_UA_MODE`,
+  `OPENCODE_UA`, `OPENCODE_CLIENT`, `OPENCODE_DROP_HEADERS`, `OPENCODE_EXTRA_HEADERS`
+  (precedence: env > downstream > default; with none set the wire is byte-identical).
+- **Dashboard — "OpenCode Free fingerprint" card** in Profile: persisted settings are
+  mirrored into `process.env` through live getters, so a change applies to the next
+  request without a restart; Reset restores the `.env` boot values.
+- **OpenCode Free — `deepseek-v4.1-flash-free`**: added to the catalog with real
+  capabilities (vision, reasoning, 1M context); retired `deepseek-v4-flash-free`.
+- **Diagnostics**: one honest log line on `403 FreeTierError` listing the effective
+  fingerprint (endpoint, ua mode, ua, client, drop, extra, url) and the `OPENCODE_*`
+  knobs to retune it.
+
+## Fixes
+- **OpenCode Free — thinking levels**: `mimo-v2.6-flash-free` ships no effort field
+  (the gateway accepts and ignores it); `cat-jam-free` offers only
+  `low/medium/high/xhigh` (upstream 400s on `none`/`minimal`) and declares its real
+  reasoning; an unsupported `reasoning_effort` is clamped to the nearest supported
+  step instead of being forwarded to strict upstreams.
+- **OpenCode Free — routes enabled** by default and discoverable in `/v1/models`.
+- **OpenCode Free — fingerprint/headers synced** (session id, client, UA) on both the
+  free and keyed lanes.
+- **OpenCode Free — aliased tool names restored on same-format streams**, so a client
+  pointed at 9Router can actually execute `read`/`shell` (the request side renames the
+  caller's tools to travel under OpenCode's own names; the passthrough stream now
+  renames them back).
+- **Open-SSE — proxy hardening**: per-leg connect timeouts, detailed proxy errors,
+  strict-proxy fail-fast, faster stall detection (150s), first-chunk timeout (200s).
+
 # v0.5.104 (2026-10-15)
 
 ## Features
