@@ -39,6 +39,7 @@ export default {
     { id: "muse-spark-1.3-contributor-free", name: "Muse Spark 1.3 Contributor Free", targetFormat: "openai-responses" },
     { id: "union-alpha", name: "Union Alpha Free", targetFormat: "claude" },
     { id: "cat-jam-free", name: "Cat Jam Free" },
+    { id: "deepseek-v4.1-flash-free", name: "DeepSeek V4.1 Flash Free" },
     { id: "jev-1.13-free", name: "Jev 1.13 Free", kind: "systemone" },
     { id: "ling-3.1-flash-free", name: "Ling 3.1 Flash Free" },
     { id: "longcat-2.5-preview-free", name: "LongCat 2.5 Preview Free" },

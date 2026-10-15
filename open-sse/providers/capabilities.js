@@ -185,7 +185,8 @@ export const MODEL_CAPABILITIES = {
   // No limits declared: the free lane's /zen/v1/models returns bare ids and
   // models.dev publishes nothing for this id.
   "cat-jam-free": { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false },
-  // ── OpenCode Free (reasoning: true in models.dev, ids newer than the tables above) ──
+  "deepseek-v4.1-flash-free": { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 384000 },
+
   // Without these entries getCapabilitiesForModel() falls through to
   // DEFAULT_CAPABILITIES (reasoning: false) and applyThinking() strips the client's
   // reasoning_effort before it reaches the upstream — see #2690.
