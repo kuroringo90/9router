@@ -1,3 +1,51 @@
+# v0.5.112-mod (2026-11-03)
+
+Mod release for `kuroringo90/9router` branch `mod`: upstream **v0.5.112** (2026-10-28)
+plus the fork-only work below. Version string is `0.5.112-mod` (valid semver
+prerelease), so the runtime User-Agent reads `9Router/0.5.112-mod`.
+
+Rebase notes: upstream absorbed or superseded several earlier fork fixes — full
+reasoning support for `oc/mimo-v2.6-flash-free` replaces the old "high"-only honest
+picker (and the empty-set no-picker variant), the passthrough stream now restores
+fingerprint tool aliases by itself (#4986), and the free lane is rebuilt around the
+wreq-js TLS session, a live model catalog and the `<env>` body marker. What survives
+is what upstream has not shipped.
+
+## Features
+- **OpenCode Free — tunable fingerprint**: `OPENCODE_ENDPOINT`, `OPENCODE_UA_MODE`,
+  `OPENCODE_UA`, `OPENCODE_CLIENT`, `OPENCODE_DROP_HEADERS`, `OPENCODE_EXTRA_HEADERS`
+  (precedence: env > downstream > default; with none set the wire is byte-identical).
+- **Dashboard — "OpenCode Free fingerprint" card** in Profile: persisted settings are
+  mirrored into `process.env` through live getters, so a change applies to the next
+  request without a restart; Reset restores the `.env` boot values.
+- **OpenCode Free — `deepseek-v4.1-flash-free`** kept in the static catalog (upstream
+  carries its capabilities and thinking levels but resolves models live; the fork
+  pins the id so it is discoverable without the fetcher).
+
+## Fixes
+- **OpenCode Free — request headers**: `x-opencode-session-id` rides along with
+  `x-opencode-session` (same value) on the zen keyed lane and the System One
+  handler, mirroring the v2 CLI; the session header stays scoped to OpenCode
+  providers so other System One lanes never receive it.
+- **OpenCode Free — honest thinking levels**: `cat-jam-free` offers only
+  `low/medium/high/xhigh` (upstream 400s on `none`/`minimal`) and declares its real
+  reasoning with `thinkingCanDisable: false`; `mimo-v2.6-flash-free` follows
+  upstream's full OpenAI effort enum.
+- **Translator — effort clamp**: an unsupported `reasoning_effort` is clamped to the
+  nearest supported step instead of being forwarded to strict upstreams (binary
+  sets such as zai's `["none","thinking"]` stay off/on switches). Two markers pass
+  through untouched: the adaptive `auto` sentinel (dropped downstream instead of
+  being clamped onto the ladder) and the `minimal` thinking-off marker for
+  claude-adaptive models, which keeps the GitHub Copilot / Kiro opus-5.5 round
+  trips thinking-free.
+- **OpenCode Free — routes enabled** by default and discoverable in `/v1/models`.
+- **OpenCode Free — Claude OAuth cloaking undone on same-format streams**: upstream
+  now restores fingerprint tool aliases on the passthrough path (#4986) but only
+  inside the translator; the fork also unwraps the cloaked tool names
+  (`tool → tool_ide`) there, so claude-shaped clients get their own tools back.
+- **Open-SSE — proxy hardening**: per-leg connect timeouts, detailed proxy errors,
+  strict-proxy fail-fast, faster stall detection (150s), first-chunk timeout (200s).
+
 # v0.5.112 (2026-10-28)
 
 ## Features
